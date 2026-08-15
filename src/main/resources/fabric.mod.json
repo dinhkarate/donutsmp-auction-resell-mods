@@ -1,0 +1,26 @@
+{
+    "schemaVersion": 1,
+    "id": "donutsell",
+    "version": "${version}",
+    "name": "ASell",
+    "description": "Automatic Auction House selling mod for Minecraft. Auto-sell items via /ah sell with anti-ban protection.",
+    "authors": [
+        "nguyenttuca"
+    ],
+    "contact": {
+        "sources": "https://github.com/nguyenttuca/asell-mod"
+    },
+    "license": "MIT",
+    "icon": "",
+    "environment": "client",
+    "entrypoints": {
+        "client": [
+            "com.donutsell.DonutSellMod"
+        ]
+    },
+    "depends": {
+        "fabricloader": ">=0.16.0",
+        "minecraft": "~1.21.1",
+        "java": ">=21"
+    }
+}
