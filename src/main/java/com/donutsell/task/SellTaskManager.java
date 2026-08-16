@@ -44,6 +44,7 @@ public class SellTaskManager {
     private int price = 0;
     private boolean dynamicPriceRun = false;
     private ItemStack heldItemTemplate = null;
+    private String heldSearchQuery = null;
     private int tickCounter = 0;
     private int itemsSold = 0;
     private int itemsCollected = 0;
@@ -108,6 +109,10 @@ public class SellTaskManager {
     }
 
     public void startHeldItemUndercut(int undercut) {
+        startHeldItemUndercut(undercut, null);
+    }
+
+    public void startHeldItemUndercut(int undercut, String searchQuery) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.player.getMainHandStack().isEmpty()) {
             ChatUtils.sendError("Hãy cầm item mẫu trên tay trước khi chạy lệnh.");
@@ -123,6 +128,7 @@ public class SellTaskManager {
         config.smartPricing = true;
         config.desiredQuantity = 1;
         config.autoOrder = true;
+        this.heldSearchQuery = (searchQuery != null && !searchQuery.isBlank()) ? searchQuery.trim() : null;
         config.save();
         dynamicPriceRun = true;
         start(0);
@@ -131,6 +137,7 @@ public class SellTaskManager {
     public void startSharpness5Axe() {
         config.heldItemWorkflow = false;
         heldItemTemplate = null;
+        heldSearchQuery = null;
         config.targetItem = "minecraft:diamond_axe";
         config.targetEnchantment = "sharpness";
         config.targetEnchantmentLevel = 5;
@@ -147,6 +154,7 @@ public class SellTaskManager {
     public void startAxeSharp5Fixed(int sellPrice) {
         config.heldItemWorkflow = false;
         heldItemTemplate = null;
+        heldSearchQuery = null;
         config.targetItem = "minecraft:diamond_axe";
         config.targetEnchantment = "sharpness";
         config.targetEnchantmentLevel = 5;
@@ -387,6 +395,7 @@ public class SellTaskManager {
 
     private String heldSearchCommand() {
         if (!isHeldWorkflow()) return "ah diamond axe sharp 5";
+        if (heldSearchQuery != null) return "ah " + heldSearchQuery;
         String name = heldItemTemplate.getName().getString().toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
         StringBuilder command = new StringBuilder("ah ").append(name);

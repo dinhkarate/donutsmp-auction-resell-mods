@@ -107,7 +107,9 @@ IDLE → PREPARING_ITEM → SENDING_COMMAND → WAITING_FOR_GUI → CLICKING_CON
 /asell 5000                    # Bán với giá 5000
 /asell                         # Bán với giá mặc định (config)
 /asell asell 1k                # Cầm item mẫu, undercut AH 1k, tự fill /order
+/asell asell 1k diamond axe sharpness 5   # Chỉ định tên quét AH rồi undercut 1k
 /asell 1k                       # Alias ngắn của lệnh trên
+/asell 1k diamond axe sharpness 5         # Alias ngắn kèm tên quét AH
 /asell cost 300k                # Cost mua mỗi item từ /order để tính profit
 /asell axesharp5 450k           # List Sharpness V, tự collect /order khi hết hàng
 /asell sharpness5axe            # Quét AH, undercut 1,000, tự collect /order

@@ -35,9 +35,22 @@ public class DonutSellCommand {
             dispatcher.register(
                 ClientCommandManager.literal("asell")
 
-                    // /asell asell <undercut>
+                    // /asell asell <undercut> [searchQuery]
                     .then(ClientCommandManager.literal("asell")
                         .then(ClientCommandManager.argument("undercut", StringArgumentType.word())
+                            .then(ClientCommandManager.argument("searchQuery", StringArgumentType.greedyString())
+                                .executes(ctx -> {
+                                    String raw = StringArgumentType.getString(ctx, "undercut");
+                                    Integer undercut = SellTaskManager.parsePrice(raw);
+                                    if (undercut == null) {
+                                        ChatUtils.sendError("Undercut không hợp lệ: " + raw + ". Ví dụ: 1k, 2k, 6k.");
+                                        return 0;
+                                    }
+                                    String query = StringArgumentType.getString(ctx, "searchQuery").trim();
+                                    taskManager.startHeldItemUndercut(undercut, query);
+                                    return 1;
+                                })
+                            )
                             .executes(ctx -> {
                                 String raw = StringArgumentType.getString(ctx, "undercut");
                                 Integer undercut = SellTaskManager.parsePrice(raw);
@@ -51,8 +64,21 @@ public class DonutSellCommand {
                         )
                     )
 
-                    // /asell <undercut> — shorthand
+                    // /asell <undercut> [searchQuery] — shorthand
                     .then(ClientCommandManager.argument("undercutOnly", StringArgumentType.word())
+                        .then(ClientCommandManager.argument("searchQueryShort", StringArgumentType.greedyString())
+                            .executes(ctx -> {
+                                String raw = StringArgumentType.getString(ctx, "undercutOnly");
+                                Integer undercut = SellTaskManager.parsePrice(raw);
+                                if (undercut == null) {
+                                    ChatUtils.sendError("Undercut không hợp lệ: " + raw + ". Ví dụ: 1k, 2k, 6k.");
+                                    return 0;
+                                }
+                                String query = StringArgumentType.getString(ctx, "searchQueryShort").trim();
+                                taskManager.startHeldItemUndercut(undercut, query);
+                                return 1;
+                            })
+                        )
                         .executes(ctx -> {
                             String raw = StringArgumentType.getString(ctx, "undercutOnly");
                             Integer undercut = SellTaskManager.parsePrice(raw);
@@ -286,8 +312,10 @@ public class DonutSellCommand {
     private static void showHelp() {
         ChatUtils.sendInfo("═══ ASell - Trợ giúp ═══");
         ChatUtils.sendInfo("§e--- Điều khiển ---");
-        ChatUtils.sendInfo("§f/asell asell <under>  §7Cầm item mẫu, quét AH, undercut và tự fill /order");
+        ChatUtils.sendInfo("§f/asell asell <under> §7Cầm item mẫu, quét AH, undercut, tự fill /order");
+        ChatUtils.sendInfo("§f/asell asell 1k diamond axe sharpness 5 §7Chỉ định tên quét AH");
         ChatUtils.sendInfo("§f/asell <under>       §7Alias ngắn, ví dụ /asell 1k");
+        ChatUtils.sendInfo("§f/asell 1k diamond axe sharpness 5 §7Alias ngắn kèm tên quét AH");
         ChatUtils.sendInfo("§f/asell sharpness5axe  §7Quét AH + undercut Diamond Axe Sharpness V");
         ChatUtils.sendInfo("§f/asell axesharp5 <giá> §7List Diamond Axe Sharpness V theo giá cố định");
         ChatUtils.sendInfo("§f/asell <giá>          §7Bán với giá tùy chỉnh");
