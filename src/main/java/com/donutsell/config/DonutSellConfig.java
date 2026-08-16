@@ -43,6 +43,12 @@ public class DonutSellConfig {
     /** Amount to undercut the lowest matching listing by. */
     public int undercutAmount = 1000;
 
+    /** Generic held-item workflow: exact ItemStack template captured at start. */
+    public boolean heldItemWorkflow = false;
+
+    /** Exact held-item component template encoded for the current run. */
+    public String heldItemTemplate = "";
+
     /** Lowest accepted market price for smart pricing. */
     public int minimumMarketPrice = 400000;
 
@@ -151,6 +157,8 @@ public class DonutSellConfig {
         this.desiredQuantity = other.desiredQuantity;
         this.smartPricing = other.smartPricing;
         this.undercutAmount = other.undercutAmount;
+        this.heldItemWorkflow = other.heldItemWorkflow;
+        this.heldItemTemplate = other.heldItemTemplate;
         this.minimumMarketPrice = other.minimumMarketPrice;
         this.maximumMarketPrice = other.maximumMarketPrice;
         this.acquisitionCostPerItem = other.acquisitionCostPerItem;

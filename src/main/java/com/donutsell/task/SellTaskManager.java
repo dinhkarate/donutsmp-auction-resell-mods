@@ -43,6 +43,7 @@ public class SellTaskManager {
     private SellState state = SellState.IDLE;
     private int price = 0;
     private boolean dynamicPriceRun = false;
+    private ItemStack heldItemTemplate = null;
     private int tickCounter = 0;
     private int itemsSold = 0;
     private int itemsCollected = 0;
@@ -106,7 +107,30 @@ public class SellTaskManager {
         start(0);
     }
 
+    public void startHeldItemUndercut(int undercut) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || mc.player.getMainHandStack().isEmpty()) {
+            ChatUtils.sendError("Hãy cầm item mẫu trên tay trước khi chạy lệnh.");
+            return;
+        }
+        heldItemTemplate = mc.player.getMainHandStack().copyWithCount(1);
+        config.heldItemWorkflow = true;
+        config.heldItemTemplate = InventoryUtils.getItemId(heldItemTemplate);
+        config.targetItem = InventoryUtils.getItemId(heldItemTemplate);
+        config.targetEnchantment = "";
+        config.targetEnchantmentLevel = 0;
+        config.undercutAmount = undercut;
+        config.smartPricing = true;
+        config.desiredQuantity = 1;
+        config.autoOrder = true;
+        config.save();
+        dynamicPriceRun = true;
+        start(0);
+    }
+
     public void startSharpness5Axe() {
+        config.heldItemWorkflow = false;
+        heldItemTemplate = null;
         config.targetItem = "minecraft:diamond_axe";
         config.targetEnchantment = "sharpness";
         config.targetEnchantmentLevel = 5;
@@ -121,6 +145,8 @@ public class SellTaskManager {
     }
 
     public void startAxeSharp5Fixed(int sellPrice) {
+        config.heldItemWorkflow = false;
+        heldItemTemplate = null;
         config.targetItem = "minecraft:diamond_axe";
         config.targetEnchantment = "sharpness";
         config.targetEnchantmentLevel = 5;
@@ -195,8 +221,7 @@ public class SellTaskManager {
         this.orderFoundSlot = -1;
         this.ahFullWaitTicks = 0;
 
-        int totalItems = InventoryUtils.getTotalCount(config.targetItem,
-                config.targetEnchantment, config.targetEnchantmentLevel);
+        int totalItems = currentTargetCount();
         if (totalItems == 0 && !config.autoOrder) {
             ChatUtils.sendError("Không tìm thấy item: " + config.targetItem);
             state = SellState.ERROR;
@@ -325,10 +350,58 @@ public class SellTaskManager {
 
     // ========================= Core Sell States =========================
 
+    private boolean isHeldWorkflow() {
+        return config.heldItemWorkflow && heldItemTemplate != null && !heldItemTemplate.isEmpty();
+    }
+
+    private int currentTargetCount() {
+        return isHeldWorkflow()
+                ? InventoryUtils.getTotalCount(heldItemTemplate)
+                : InventoryUtils.getTotalCount(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
+    }
+
+    private boolean isHoldingCurrentTarget() {
+        return isHeldWorkflow()
+                ? InventoryUtils.isTargetStack(MinecraftClient.getInstance().player.getMainHandStack(), heldItemTemplate)
+                : InventoryUtils.isHoldingTargetItem(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
+    }
+
+    private int currentMainHandCount() {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || !isHoldingCurrentTarget()) return 0;
+        return mc.player.getMainHandStack().getCount();
+    }
+
+    private int currentFindItemSlot() {
+        return isHeldWorkflow()
+                ? InventoryUtils.findItemSlot(heldItemTemplate)
+                : InventoryUtils.findItemSlot(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
+    }
+
+    private int currentFindSlotWithMinCount(int minCount, int excludeSlot) {
+        return isHeldWorkflow()
+                ? InventoryUtils.findSlotWithMinCount(heldItemTemplate, minCount, excludeSlot)
+                : InventoryUtils.findSlotWithMinCount(config.targetItem, config.targetEnchantment,
+                config.targetEnchantmentLevel, minCount, excludeSlot);
+    }
+
+    private String heldSearchCommand() {
+        if (!isHeldWorkflow()) return "ah diamond axe sharp 5";
+        String name = heldItemTemplate.getName().getString().toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
+        StringBuilder command = new StringBuilder("ah ").append(name);
+        for (net.minecraft.text.Text line : InventoryUtils.getItemLore(heldItemTemplate)) {
+            String lore = line.getString().toLowerCase(Locale.ROOT);
+            if (lore.contains("sharpness") || lore.contains("efficiency") || lore.contains("fortune")
+                    || lore.contains("protection") || lore.contains("mending")) {
+                command.append(' ').append(lore.replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim());
+            }
+        }
+        return command.toString();
+    }
+
     private void handlePreparingItem(MinecraftClient mc) {
-        int totalCount = InventoryUtils.getTotalCount(config.targetItem,
-                config.targetEnchantment, config.targetEnchantmentLevel);
-        if (totalCount == 0) {
+        int totalCount = currentTargetCount();        if (totalCount == 0) {
             if (config.autoOrder && !hasTriedOrder) {
                 ChatUtils.sendInfo("📦 Hết đồ! Đang lấy thêm từ /" + config.orderCommand + "...");
                 hasTriedOrder = true;
@@ -352,11 +425,8 @@ public class SellTaskManager {
             return;
         }
 
-        if (InventoryUtils.isHoldingTargetItem(config.targetItem,
-                config.targetEnchantment, config.targetEnchantmentLevel)) {
-            int mainHandCount = InventoryUtils.getMainHandCount(config.targetItem,
-                    config.targetEnchantment, config.targetEnchantmentLevel);
-
+        if (isHoldingCurrentTarget()) {
+            int mainHandCount = currentMainHandCount();
             if (mainHandCount == config.desiredQuantity) {
                 if (config.chatNotifications) {
                     ChatUtils.sendAction("Item sẵn sàng: " + config.desiredQuantity + "x " + config.targetItem);
@@ -373,9 +443,8 @@ public class SellTaskManager {
                 tickCounter = 0;
 
             } else {
-                int goodSlot = InventoryUtils.findSlotWithMinCount(
-                        config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel,
-                        config.desiredQuantity, mc.player.getInventory().selectedSlot);
+                int goodSlot = currentFindSlotWithMinCount(config.desiredQuantity,
+                        mc.player.getInventory().selectedSlot);
                 if (goodSlot >= 0) {
                     if (config.chatNotifications) {
                         ChatUtils.sendInfo("Tìm thấy stack phù hợp tại slot " + goodSlot + ", đang chuyển...");
@@ -392,8 +461,7 @@ public class SellTaskManager {
                 }
             }
         } else {
-            int slot = InventoryUtils.findItemSlot(config.targetItem,
-                    config.targetEnchantment, config.targetEnchantmentLevel);
+            int slot = currentFindItemSlot();
             if (slot >= 0) {
                 if (config.chatNotifications) {
                     ChatUtils.sendAction("Chuyển item từ slot " + slot + " lên tay...");
@@ -424,8 +492,7 @@ public class SellTaskManager {
         }
 
         if (tickCounter == 0) {
-            if (InventoryUtils.isHoldingTargetItem(config.targetItem,
-                    config.targetEnchantment, config.targetEnchantmentLevel)) {
+            if (isHoldingCurrentTarget()) {
                 InventoryUtils.clickScreenSlot(screenSlot, 0, SlotActionType.PICKUP);
                 tickCounter = 1;
             } else {
@@ -473,9 +540,9 @@ public class SellTaskManager {
                 smartPagesScanned = 0;
                 lowestMarketPrice = Integer.MAX_VALUE;
                 if (mc.getNetworkHandler() != null) {
-                    mc.getNetworkHandler().sendCommand("ah diamond axe sharp 5");
+                    mc.getNetworkHandler().sendCommand(heldSearchCommand());
                 }
-                if (config.chatNotifications) ChatUtils.sendAction("Mở /ah diamond axe sharp 5 để quét Diamond Axe Sharpness V...");
+                if (config.chatNotifications) ChatUtils.sendAction("Mở /" + heldSearchCommand() + " để quét giá...");
             }
             tickCounter++;
             if (tickCounter > config.guiTimeout) {
@@ -497,8 +564,11 @@ public class SellTaskManager {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
             if (slot == null || !slot.hasStack()) continue;
             ItemStack stack = slot.getStack();
-            if (!InventoryUtils.isTargetStack(stack, config.targetItem,
-                    config.targetEnchantment, config.targetEnchantmentLevel)) continue;
+            boolean targetMatch = isHeldWorkflow()
+                    ? InventoryUtils.isTargetStack(stack, heldItemTemplate)
+                    : InventoryUtils.isTargetStack(stack, config.targetItem,
+                    config.targetEnchantment, config.targetEnchantmentLevel);
+            if (!targetMatch) continue;
             Integer listingPrice = parseListingPrice(stack);
             if (listingPrice == null) continue;
             sawMatchingListing = true;
@@ -741,8 +811,7 @@ public class SellTaskManager {
 
         if (tickCounter >= currentItemDelay) {
             if (config.chatNotifications) {
-                int remaining = InventoryUtils.getTotalCount(config.targetItem,
-                        config.targetEnchantment, config.targetEnchantmentLevel);
+                int remaining = currentTargetCount();
                 ChatUtils.sendInfo("Đã bán: §f" + itemsSold + " §7| Còn lại: §f" + remaining);
             }
             retryCount = 0;
@@ -867,7 +936,9 @@ public class SellTaskManager {
 
             ItemStack orderStack = slot.getStack();
             String itemId = InventoryUtils.getItemId(orderStack);
-            boolean exactTarget = InventoryUtils.isTargetStack(orderStack, config.targetItem,
+            boolean exactTarget = isHeldWorkflow()
+                    ? InventoryUtils.isTargetStack(orderStack, heldItemTemplate)
+                    : InventoryUtils.isTargetStack(orderStack, config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel);
             boolean loreTarget = orderStack.getName().getString().toLowerCase(Locale.ROOT).contains("diamond axe")
                     && InventoryUtils.getItemLore(orderStack).stream()
@@ -905,8 +976,7 @@ public class SellTaskManager {
 
         if (!(mc.currentScreen instanceof HandledScreen<?>)) {
             // GUI đóng bất ngờ → có thể server đã tự collect
-            int totalCount = InventoryUtils.getTotalCount(config.targetItem,
-                    config.targetEnchantment, config.targetEnchantmentLevel);
+            int totalCount = currentTargetCount();
             int collectedNow = Math.max(0, totalCount - inventoryCountBeforeCollect);
             itemsCollected += collectedNow;
             if (totalCount > 0) {
@@ -948,8 +1018,7 @@ public class SellTaskManager {
             if (isCollect) {
                 if (config.chatNotifications)
                     ChatUtils.sendInfo("Nhấn §fCollect §7(slot " + i + ")");
-                inventoryCountBeforeCollect = InventoryUtils.getTotalCount(config.targetItem,
-                        config.targetEnchantment, config.targetEnchantmentLevel);
+                inventoryCountBeforeCollect = currentTargetCount();
                 InventoryUtils.clickScreenSlot(i);
                 // Sau khi click Collect, GUI mới sẽ mở ra
                 orderCollectIndex = 0;
@@ -976,8 +1045,7 @@ public class SellTaskManager {
             // orderCollectIndex != -999: GUI đóng bất ngờ giữa chừng
             if (tickCounter < 25) return; // chờ 25 tick (~1.25s) cho packet inventory về
 
-            int totalCount = InventoryUtils.getTotalCount(config.targetItem,
-                    config.targetEnchantment, config.targetEnchantmentLevel);
+            int totalCount = currentTargetCount();
             int collectedNow = Math.max(0, totalCount - inventoryCountBeforeCollect);
             itemsCollected += collectedNow;
             if (totalCount > 0) {
@@ -1007,8 +1075,9 @@ public class SellTaskManager {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
 
             if (slot != null && slot.hasStack()
-                    && InventoryUtils.isTargetStack(slot.getStack(), config.targetItem,
-                    config.targetEnchantment, config.targetEnchantmentLevel)) {
+                    && (isHeldWorkflow() ? InventoryUtils.isTargetStack(slot.getStack(), heldItemTemplate)
+                    : InventoryUtils.isTargetStack(slot.getStack(), config.targetItem,
+                    config.targetEnchantment, config.targetEnchantmentLevel))) {
                 if (config.chatNotifications) {
                     String itemName = slot.getStack().getName().getString();
                     int count = slot.getStack().getCount();

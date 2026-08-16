@@ -59,6 +59,12 @@ public class InventoryUtils {
         return isTargetStack(mainHand, targetItemId, enchantmentId, enchantmentLevel);
     }
 
+    /** Match an exact ItemStack template, including all components but not count. */
+    public static boolean isTargetStack(ItemStack stack, ItemStack template) {
+        return stack != null && !stack.isEmpty() && template != null && !template.isEmpty()
+                && ItemStack.areItemsAndComponentsEqual(stack, template);
+    }
+
     /** Match the item id and, when configured, an exact enchantment level. */
     public static boolean isTargetStack(ItemStack stack, String targetItemId,
                                         String enchantmentId, int enchantmentLevel) {
@@ -113,6 +119,16 @@ public class InventoryUtils {
         return getTotalCount(targetItemId, "", 0);
     }
 
+    public static int getTotalCount(ItemStack template) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || template == null || template.isEmpty()) return 0;
+        int count = 0;
+        for (ItemStack stack : mc.player.getInventory().main) {
+            if (isTargetStack(stack, template)) count += stack.getCount();
+        }
+        return count;
+    }
+
     public static int getTotalCount(String targetItemId, String enchantmentId, int enchantmentLevel) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null) return 0;
@@ -133,6 +149,16 @@ public class InventoryUtils {
      */
     public static int findItemSlot(String targetItemId) {
         return findItemSlot(targetItemId, "", 0);
+    }
+
+    public static int findItemSlot(ItemStack template) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || template == null || template.isEmpty()) return -1;
+        int selectedSlot = mc.player.getInventory().selectedSlot;
+        for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
+            if (i != selectedSlot && isTargetStack(mc.player.getInventory().main.get(i), template)) return i;
+        }
+        return -1;
     }
 
     public static int findItemSlot(String targetItemId, String enchantmentId, int enchantmentLevel) {
@@ -156,6 +182,20 @@ public class InventoryUtils {
      */
     public static int findSlotWithMinCount(String targetItemId, int minCount, int excludeSlot) {
         return findSlotWithMinCount(targetItemId, "", 0, minCount, excludeSlot);
+    }
+
+    public static int findSlotWithMinCount(ItemStack template, int minCount, int excludeSlot) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || template == null || template.isEmpty()) return -1;
+        for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
+            if (i != excludeSlot && isTargetStack(mc.player.getInventory().main.get(i), template)
+                    && mc.player.getInventory().main.get(i).getCount() == minCount) return i;
+        }
+        for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
+            if (i != excludeSlot && isTargetStack(mc.player.getInventory().main.get(i), template)
+                    && mc.player.getInventory().main.get(i).getCount() >= minCount) return i;
+        }
+        return -1;
     }
 
     public static int findSlotWithMinCount(String targetItemId, String enchantmentId, int enchantmentLevel,

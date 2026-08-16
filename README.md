@@ -106,7 +106,9 @@ IDLE → PREPARING_ITEM → SENDING_COMMAND → WAITING_FOR_GUI → CLICKING_CON
 ```bash
 /asell 5000                    # Bán với giá 5000
 /asell                         # Bán với giá mặc định (config)
-/asell cost 300k                # Cost mua mỗi axe từ /order để tính profit
+/asell asell 1k                # Cầm item mẫu, undercut AH 1k, tự fill /order
+/asell 1k                       # Alias ngắn của lệnh trên
+/asell cost 300k                # Cost mua mỗi item từ /order để tính profit
 /asell axesharp5 450k           # List Sharpness V, tự collect /order khi hết hàng
 /asell sharpness5axe            # Quét AH, undercut 1,000, tự collect /order
 /asell report                   # Gửi financial report lên Discord
@@ -141,6 +143,8 @@ Config lưu tại: `.minecraft/config/asell.json`
 {
   "defaultPrice": 100,
   "targetItem": "minecraft:diamond_axe",
+  "heldItemWorkflow": false,
+  "heldItemTemplate": "",
   "targetEnchantment": "sharpness",
   "targetEnchantmentLevel": 5,
   "desiredQuantity": 1,

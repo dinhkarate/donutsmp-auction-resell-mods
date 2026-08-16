@@ -35,6 +35,36 @@ public class DonutSellCommand {
             dispatcher.register(
                 ClientCommandManager.literal("asell")
 
+                    // /asell asell <undercut>
+                    .then(ClientCommandManager.literal("asell")
+                        .then(ClientCommandManager.argument("undercut", StringArgumentType.word())
+                            .executes(ctx -> {
+                                String raw = StringArgumentType.getString(ctx, "undercut");
+                                Integer undercut = SellTaskManager.parsePrice(raw);
+                                if (undercut == null) {
+                                    ChatUtils.sendError("Undercut không hợp lệ: " + raw + ". Ví dụ: 1k, 2k, 6k.");
+                                    return 0;
+                                }
+                                taskManager.startHeldItemUndercut(undercut);
+                                return 1;
+                            })
+                        )
+                    )
+
+                    // /asell <undercut> — shorthand
+                    .then(ClientCommandManager.argument("undercutOnly", StringArgumentType.word())
+                        .executes(ctx -> {
+                            String raw = StringArgumentType.getString(ctx, "undercutOnly");
+                            Integer undercut = SellTaskManager.parsePrice(raw);
+                            if (undercut == null) {
+                                ChatUtils.sendError("Undercut không hợp lệ: " + raw + ". Ví dụ: 1k, 2k, 6k.");
+                                return 0;
+                            }
+                            taskManager.startHeldItemUndercut(undercut);
+                            return 1;
+                        })
+                    )
+
                     // /asell sharpness5axe
                     .then(ClientCommandManager.literal("sharpness5axe")
                         .executes(ctx -> {
@@ -256,6 +286,8 @@ public class DonutSellCommand {
     private static void showHelp() {
         ChatUtils.sendInfo("═══ ASell - Trợ giúp ═══");
         ChatUtils.sendInfo("§e--- Điều khiển ---");
+        ChatUtils.sendInfo("§f/asell asell <under>  §7Cầm item mẫu, quét AH, undercut và tự fill /order");
+        ChatUtils.sendInfo("§f/asell <under>       §7Alias ngắn, ví dụ /asell 1k");
         ChatUtils.sendInfo("§f/asell sharpness5axe  §7Quét AH + undercut Diamond Axe Sharpness V");
         ChatUtils.sendInfo("§f/asell axesharp5 <giá> §7List Diamond Axe Sharpness V theo giá cố định");
         ChatUtils.sendInfo("§f/asell <giá>          §7Bán với giá tùy chỉnh");
