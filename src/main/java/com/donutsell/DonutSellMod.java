@@ -89,8 +89,17 @@ public class DonutSellMod implements ClientModInitializer {
         });
 
         ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
-            if (!overlay && taskManager.isRunning()) {
-                String plainText = message.getString().toLowerCase();
+            if (overlay) return;
+
+            String plainText = message.getString().toLowerCase();
+            boolean isItemSold = plainText.contains("bought your")
+                    || plainText.contains("đã mua")
+                    || plainText.contains("purchased");
+            if (isItemSold) {
+                taskManager.triggerItemSold(message.getString());
+            }
+
+            if (taskManager.isRunning()) {
                 String playerName = MinecraftClient.getInstance().player != null ?
                     MinecraftClient.getInstance().player.getName().getString().toLowerCase() : "";
 
@@ -114,13 +123,6 @@ public class DonutSellMod implements ClientModInitializer {
                     taskManager.triggerAhFull();
                 }
 
-                boolean isItemSold = plainText.contains("bought your") || 
-                                     plainText.contains("đã mua") || 
-                                     plainText.contains("purchased");
-
-                if (isItemSold) {
-                    taskManager.triggerItemSold();
-                }
             }
         });
 

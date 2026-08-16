@@ -45,6 +45,11 @@ public class SellTaskManager {
     private boolean dynamicPriceRun = false;
     private int tickCounter = 0;
     private int itemsSold = 0;
+    private int itemsCollected = 0;
+    private int confirmedSales = 0;
+    private long grossListedValue = 0;
+    private long realizedRevenue = 0;
+    private int inventoryCountBeforeCollect = 0;
     private int adjustDropCount = 0;
     private int retryCount = 0;
     private static final int MAX_RETRIES = 3;
@@ -78,6 +83,8 @@ public class SellTaskManager {
     private static final int MAX_SMART_PAGES = 8;
     private static final Pattern PRICE_PATTERN = Pattern.compile(
             "(?i)(?:\\$\\s*|(?:price|cost|for|giá)\\s*[:=]?\\s*\\$?)([0-9][0-9,]*(?:\\.[0-9]+)?)\\s*([kmb])?");
+    private static final Pattern SOLD_QUANTITY_PATTERN = Pattern.compile(
+            "(?i)bought your(?:\\s+([0-9]+))?");
     private int smartPagesScanned = 0;
     private int lowestMarketPrice = Integer.MAX_VALUE;
 
@@ -108,7 +115,7 @@ public class SellTaskManager {
         config.minimumMarketPrice = 400000;
         config.maximumMarketPrice = 500000;
         config.desiredQuantity = 1;
-        config.autoOrder = false;
+        config.autoOrder = true;
         config.save();
         startSmart();
     }
@@ -119,7 +126,7 @@ public class SellTaskManager {
         config.targetEnchantmentLevel = 5;
         config.smartPricing = false;
         config.desiredQuantity = 1;
-        config.autoOrder = false;
+        config.autoOrder = true;
         config.defaultPrice = sellPrice;
         config.save();
         start(sellPrice);
@@ -170,6 +177,11 @@ public class SellTaskManager {
         this.price = sellPrice;
         this.tickCounter = 0;
         this.itemsSold = 0;
+        this.itemsCollected = 0;
+        this.confirmedSales = 0;
+        this.grossListedValue = 0;
+        this.realizedRevenue = 0;
+        this.inventoryCountBeforeCollect = 0;
         this.adjustDropCount = 0;
         this.retryCount = 0;
         this.lastWorldKey = mc.world.getRegistryKey().getValue().toString();
@@ -234,7 +246,7 @@ public class SellTaskManager {
 
         ChatUtils.sendWarning("═══ Đã dừng tác vụ ═══");
         ChatUtils.sendInfo("Trạng thái trước: §f" + previousState);
-        DiscordWebhook.send(config, "ASell đã dừng | trạng thái=" + previousState + " | đã bán=" + itemsSold);
+        DiscordWebhook.send(config, financialSummary("ASell đã dừng | trạng thái=" + previousState));
         ChatUtils.sendInfo("Tổng đã bán: §f" + itemsSold + " lần");
     }
 
@@ -244,6 +256,24 @@ public class SellTaskManager {
 
     public SellState getState() { return state; }
     public int getItemsSold() { return itemsSold; }
+    public int getItemsCollected() { return itemsCollected; }
+    public int getConfirmedSales() { return confirmedSales; }
+    public long getGrossListedValue() { return grossListedValue; }
+    public long getRealizedRevenue() { return realizedRevenue; }
+    public long getProjectedProfit() {
+        return grossListedValue - (long) itemsSold * config.acquisitionCostPerItem;
+    }
+    public long getRealizedProfit() {
+        return realizedRevenue - (long) confirmedSales * config.acquisitionCostPerItem;
+    }
+    public void sendFinancialReport() {
+        String report = financialSummary("ASell financial report");
+        if (DiscordWebhook.send(config, report)) {
+            ChatUtils.sendSuccess("Đã gửi financial report lên Discord webhook.");
+        } else {
+            ChatUtils.sendError("Webhook đang tắt hoặc URL không hợp lệ. Hãy rotate URL cũ rồi cấu hình URL mới.");
+        }
+    }
 
     // ========================= Tick Handler =========================
 
@@ -308,7 +338,7 @@ public class SellTaskManager {
             }
             ChatUtils.sendSuccess("═══ Đã bán hết tất cả item! ═══");
             ChatUtils.sendInfo("Tổng: §f" + itemsSold + " lần bán");
-            DiscordWebhook.send(config, "ASell hoàn tất: đã xử lý hết item | tổng lần list=" + itemsSold);
+            DiscordWebhook.send(config, financialSummary("ASell hoàn tất: không còn item/order có thể collect"));
             state = SellState.FINISHED;
             return;
         }
@@ -516,13 +546,11 @@ public class SellTaskManager {
         tickCounter = 0;
     }
 
-    private Integer parseListingPrice(ItemStack stack) {
-        for (net.minecraft.text.Text line : InventoryUtils.getItemLore(stack)) {
-            String text = line.getString().replace("\\u00a0", " ").toLowerCase(Locale.ROOT);
-            if (!text.contains("$") && !text.contains("price") && !text.contains("cost")
-                    && !text.contains("giá") && !text.contains("for")) continue;
-            Matcher matcher = PRICE_PATTERN.matcher(text);
-            if (!matcher.find()) continue;
+    private Integer parseMoneyFromText(String rawText) {
+        if (rawText == null) return null;
+        Matcher matcher = PRICE_PATTERN.matcher(rawText.toLowerCase(Locale.ROOT));
+        Integer result = null;
+        while (matcher.find()) {
             try {
                 double value = Double.parseDouble(matcher.group(1).replace(",", ""));
                 String suffix = matcher.group(2);
@@ -534,10 +562,21 @@ public class SellTaskManager {
                         default -> 1d;
                     };
                 }
-                if (value >= 1 && value <= Integer.MAX_VALUE) return (int) value;
+                if (value >= 1 && value <= Integer.MAX_VALUE) result = (int) value;
             } catch (NumberFormatException ignored) {
-                // Ignore malformed lore and fail closed.
+                // Ignore malformed monetary values.
             }
+        }
+        return result;
+    }
+
+    private Integer parseListingPrice(ItemStack stack) {
+        for (net.minecraft.text.Text line : InventoryUtils.getItemLore(stack)) {
+            String text = line.getString().replace("\\u00a0", " ").toLowerCase(Locale.ROOT);
+            if (!text.contains("$") && !text.contains("price") && !text.contains("cost")
+                    && !text.contains("giá") && !text.contains("for")) continue;
+            Integer value = parseMoneyFromText(text);
+            if (value != null) return value;
         }
         return null;
     }
@@ -663,9 +702,9 @@ public class SellTaskManager {
 
             InventoryUtils.clickScreenSlot(slotToClick);
             if (config.chatNotifications) ChatUtils.sendSuccess("✅ Xác nhận bán tại slot " + slotToClick);
-            DiscordWebhook.send(config, "Đã list Diamond Axe Sharpness V | giá=" + price
-                    + " | tổng lần list=" + (itemsSold + 1));
             itemsSold++;
+            grossListedValue += price;
+            DiscordWebhook.send(config, financialSummary("Đã list Diamond Axe Sharpness V | giá=" + price));
         } else {
             if (config.chatNotifications)
                 ChatUtils.sendWarning("GUI đóng trước khi click! Có thể đã bán thành công.");
@@ -826,8 +865,15 @@ public class SellTaskManager {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
             if (slot == null || !slot.hasStack() || slot.getStack().isEmpty()) continue;
 
-            String itemId = InventoryUtils.getItemId(slot.getStack());
-            if (itemId.equals(config.targetItem)) {
+            ItemStack orderStack = slot.getStack();
+            String itemId = InventoryUtils.getItemId(orderStack);
+            boolean exactTarget = InventoryUtils.isTargetStack(orderStack, config.targetItem,
+                    config.targetEnchantment, config.targetEnchantmentLevel);
+            boolean loreTarget = orderStack.getName().getString().toLowerCase(Locale.ROOT).contains("diamond axe")
+                    && InventoryUtils.getItemLore(orderStack).stream()
+                    .map(line -> line.getString().toLowerCase(Locale.ROOT))
+                    .anyMatch(line -> line.contains("sharpness v") || line.contains("sharpness 5"));
+            if (itemId.equals(config.targetItem) && (exactTarget || loreTarget)) {
                 if (config.chatNotifications)
                     ChatUtils.sendInfo("Chọn order §f" + slot.getStack().getName().getString()
                             + " §7(slot " + i + ")");
@@ -859,9 +905,13 @@ public class SellTaskManager {
 
         if (!(mc.currentScreen instanceof HandledScreen<?>)) {
             // GUI đóng bất ngờ → có thể server đã tự collect
-            int totalCount = InventoryUtils.getTotalCount(config.targetItem);
+            int totalCount = InventoryUtils.getTotalCount(config.targetItem,
+                    config.targetEnchantment, config.targetEnchantmentLevel);
+            int collectedNow = Math.max(0, totalCount - inventoryCountBeforeCollect);
+            itemsCollected += collectedNow;
             if (totalCount > 0) {
-                ChatUtils.sendSuccess("Đã lấy được §f" + totalCount + " §7item (server tự collect)!");
+                ChatUtils.sendSuccess("Đã lấy được §f" + collectedNow + " §7item (server tự collect)!");
+                DiscordWebhook.send(config, financialSummary("Đã collect " + collectedNow + " item từ /order"));
                 state = SellState.PREPARING_ITEM;
             } else {
                 ChatUtils.sendWarning("GUI đóng bất ngờ, không lấy được item. Dừng.");
@@ -898,6 +948,8 @@ public class SellTaskManager {
             if (isCollect) {
                 if (config.chatNotifications)
                     ChatUtils.sendInfo("Nhấn §fCollect §7(slot " + i + ")");
+                inventoryCountBeforeCollect = InventoryUtils.getTotalCount(config.targetItem,
+                        config.targetEnchantment, config.targetEnchantmentLevel);
                 InventoryUtils.clickScreenSlot(i);
                 // Sau khi click Collect, GUI mới sẽ mở ra
                 orderCollectIndex = 0;
@@ -924,9 +976,13 @@ public class SellTaskManager {
             // orderCollectIndex != -999: GUI đóng bất ngờ giữa chừng
             if (tickCounter < 25) return; // chờ 25 tick (~1.25s) cho packet inventory về
 
-            int totalCount = InventoryUtils.getTotalCount(config.targetItem);
+            int totalCount = InventoryUtils.getTotalCount(config.targetItem,
+                    config.targetEnchantment, config.targetEnchantmentLevel);
+            int collectedNow = Math.max(0, totalCount - inventoryCountBeforeCollect);
+            itemsCollected += collectedNow;
             if (totalCount > 0) {
-                ChatUtils.sendSuccess("Đã lấy được §f" + totalCount + " §7item từ order! Tiếp tục bán...");
+                ChatUtils.sendSuccess("Đã lấy được §f" + collectedNow + " §7item từ order! Tiếp tục bán...");
+                DiscordWebhook.send(config, financialSummary("Đã collect " + collectedNow + " item từ /order"));
             } else {
                 ChatUtils.sendWarning("Không tìm thấy item trong inventory. Thử tiếp tục...");
             }
@@ -950,7 +1006,9 @@ public class SellTaskManager {
         for (int i = 0; i < containerSize; i++) {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
 
-            if (slot != null && slot.hasStack() && !slot.getStack().isEmpty()) {
+            if (slot != null && slot.hasStack()
+                    && InventoryUtils.isTargetStack(slot.getStack(), config.targetItem,
+                    config.targetEnchantment, config.targetEnchantmentLevel)) {
                 if (config.chatNotifications) {
                     String itemName = slot.getStack().getName().getString();
                     int count = slot.getStack().getCount();
@@ -1032,7 +1090,18 @@ public class SellTaskManager {
     /** 
      * Được gọi khi bắt được chat báo có người mua hoặc đồ hết hạn 
      */
-    public void triggerItemSold() {
+    public void triggerItemSold(String message) {
+        Integer salePrice = parseMoneyFromText(message);
+        Matcher quantityMatcher = SOLD_QUANTITY_PATTERN.matcher(message == null ? "" : message);
+        int quantity = quantityMatcher.find() && quantityMatcher.group(1) != null
+                ? Integer.parseInt(quantityMatcher.group(1)) : 1;
+        if (salePrice != null) {
+            confirmedSales += quantity;
+            realizedRevenue += (long) salePrice * quantity;
+            DiscordWebhook.send(config, financialSummary("Đã bán " + quantity
+                    + " Diamond Axe | doanh thu=" + ((long) salePrice * quantity)));
+        }
+
         if (state == SellState.WAITING_FOR_AH_SLOT) {
             state = SellState.PREPARING_ITEM;
             tickCounter = 0;
@@ -1042,6 +1111,18 @@ public class SellTaskManager {
                 ChatUtils.sendSuccess("Slot chợ đã trống! Giật mình tỉnh dậy bán tiếp...");
             }
         }
+    }
+
+    private String financialSummary(String event) {
+        return event
+                + "\nCollected: " + itemsCollected
+                + " | Listed: " + itemsSold
+                + " | Sold confirmed: " + confirmedSales
+                + "\nGross listed: $" + grossListedValue
+                + " | Realized revenue: $" + realizedRevenue
+                + "\nCost/item: $" + config.acquisitionCostPerItem
+                + " | Projected profit: $" + getProjectedProfit()
+                + " | Realized profit: $" + getRealizedProfit();
     }
 
     // ========================= Alert =========================

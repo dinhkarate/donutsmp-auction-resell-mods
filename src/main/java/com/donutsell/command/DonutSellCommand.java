@@ -59,6 +59,14 @@ public class DonutSellCommand {
                         )
                     )
 
+                    // /asell report
+                    .then(ClientCommandManager.literal("report")
+                        .executes(ctx -> {
+                            taskManager.sendFinancialReport();
+                            return 1;
+                        })
+                    )
+
                     // /asell stop
                     .then(ClientCommandManager.literal("stop")
                         .executes(ctx -> {
@@ -79,6 +87,12 @@ public class DonutSellCommand {
                             ChatUtils.sendInfo("Còn lại:    §f" + total + " item");
                             ChatUtils.sendInfo("Giá:        §f" + config.defaultPrice);
                             ChatUtils.sendInfo("Số lượng:   §f" + config.desiredQuantity + "/lần");
+                            ChatUtils.sendInfo("Collected:  §f" + taskManager.getItemsCollected());
+                            ChatUtils.sendInfo("Sold:       §f" + taskManager.getConfirmedSales());
+                            ChatUtils.sendInfo("Gross list: §f$" + taskManager.getGrossListedValue());
+                            ChatUtils.sendInfo("Revenue:    §f$" + taskManager.getRealizedRevenue());
+                            ChatUtils.sendInfo("Profit dự kiến: §f$" + taskManager.getProjectedProfit());
+                            ChatUtils.sendInfo("Profit thực nhận: §f$" + taskManager.getRealizedProfit());
                             if (config.autoOrder) {
                                 ChatUtils.sendInfo("Auto-order: §aBẬT §7(/" + config.orderCommand + ")");
                             } else {
@@ -129,6 +143,24 @@ public class DonutSellCommand {
                                 config.desiredQuantity = count;
                                 config.save();
                                 ChatUtils.sendSuccess("Đã đặt số lượng: §f" + count + "/lần");
+                                return 1;
+                            })
+                        )
+                    )
+
+                    // /asell cost <price>
+                    .then(ClientCommandManager.literal("cost")
+                        .then(ClientCommandManager.argument("priceText", StringArgumentType.word())
+                            .executes(ctx -> {
+                                String rawPrice = StringArgumentType.getString(ctx, "priceText");
+                                Integer cost = SellTaskManager.parsePrice(rawPrice);
+                                if (cost == null) {
+                                    ChatUtils.sendError("Cost không hợp lệ: " + rawPrice + ". Ví dụ: 300k.");
+                                    return 0;
+                                }
+                                config.acquisitionCostPerItem = cost;
+                                config.save();
+                                ChatUtils.sendSuccess("Đã đặt cost mỗi item: §f$" + cost);
                                 return 1;
                             })
                         )
@@ -228,12 +260,14 @@ public class DonutSellCommand {
         ChatUtils.sendInfo("§f/asell axesharp5 <giá> §7List Diamond Axe Sharpness V theo giá cố định");
         ChatUtils.sendInfo("§f/asell <giá>          §7Bán với giá tùy chỉnh");
         ChatUtils.sendInfo("§f/asell                §7Bán với giá mặc định");
+        ChatUtils.sendInfo("§f/asell report         §7Gửi financial report lên Discord");
         ChatUtils.sendInfo("§f/asell stop           §7Dừng tác vụ");
         ChatUtils.sendInfo("§f/asell status         §7Xem trạng thái");
         ChatUtils.sendInfo("§f/asell reload         §7Tải lại config");
         ChatUtils.sendInfo("§e--- Cài đặt ---");
         ChatUtils.sendInfo("§f/asell item <tên>     §7Đặt item (vd: lever, chest)");
         ChatUtils.sendInfo("§f/asell quantity <n>   §7Đặt số lượng mỗi lần bán");
+        ChatUtils.sendInfo("§f/asell cost <giá>     §7Đặt cost mỗi item để tính profit");
         ChatUtils.sendInfo("§f/asell delay <ticks>  §7Đặt delay giữa các lần bán");
         ChatUtils.sendInfo("§f/asell slot <n>       §7Đặt slot xác nhận GUI");
         ChatUtils.sendInfo("§e--- Auto-Order ---");

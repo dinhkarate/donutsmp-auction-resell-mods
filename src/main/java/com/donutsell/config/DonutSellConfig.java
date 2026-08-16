@@ -49,6 +49,9 @@ public class DonutSellConfig {
     /** Highest accepted market price for smart pricing. */
     public int maximumMarketPrice = 500000;
 
+    /** Acquisition cost paid per item through /order, used for profit reports. */
+    public int acquisitionCostPerItem = 0;
+
     // ====== Timing (in ticks, 20 ticks = 1 second) ======
     /** Delay (ticks) before clicking confirm button in the auction GUI */
     public int guiClickDelay = 10;
@@ -150,6 +153,7 @@ public class DonutSellConfig {
         this.undercutAmount = other.undercutAmount;
         this.minimumMarketPrice = other.minimumMarketPrice;
         this.maximumMarketPrice = other.maximumMarketPrice;
+        this.acquisitionCostPerItem = other.acquisitionCostPerItem;
         this.guiClickDelay = other.guiClickDelay;
         this.itemDelay = other.itemDelay;
         this.commandDelay = other.commandDelay;

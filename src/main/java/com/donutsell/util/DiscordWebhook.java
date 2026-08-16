@@ -15,10 +15,10 @@ public final class DiscordWebhook {
     private DiscordWebhook() {
     }
 
-    public static void send(DonutSellConfig config, String message) {
+    public static boolean send(DonutSellConfig config, String message) {
         if (config == null || !config.discordWebhookEnabled || !isAllowedWebhook(config.discordWebhookUrl)
                 || message == null || message.isBlank()) {
-            return;
+            return false;
         }
 
         String payload = "{\"content\":\"" + escapeJson(message) + "\",\"username\":\"ASell\"}";
@@ -38,6 +38,7 @@ public final class DiscordWebhook {
                     System.err.println("[ASell] Discord webhook failed: " + error.getMessage());
                     return null;
                 });
+        return true;
     }
 
     private static boolean isAllowedWebhook(String rawUrl) {

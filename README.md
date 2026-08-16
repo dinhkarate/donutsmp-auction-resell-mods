@@ -106,8 +106,10 @@ IDLE → PREPARING_ITEM → SENDING_COMMAND → WAITING_FOR_GUI → CLICKING_CON
 ```bash
 /asell 5000                    # Bán với giá 5000
 /asell                         # Bán với giá mặc định (config)
-/asell axesharp5 450k           # List Diamond Axe Sharpness V ở giá cố định
-/asell sharpness5axe            # Quét AH rồi undercut giá thấp nhất 1,000
+/asell cost 300k                # Cost mua mỗi axe từ /order để tính profit
+/asell axesharp5 450k           # List Sharpness V, tự collect /order khi hết hàng
+/asell sharpness5axe            # Quét AH, undercut 1,000, tự collect /order
+/asell report                   # Gửi financial report lên Discord
 /asell stop                    # Dừng
 /asell status                  # Xem trạng thái
 ```
@@ -138,8 +140,11 @@ Config lưu tại: `.minecraft/config/asell.json`
 ```json
 {
   "defaultPrice": 100,
-  "targetItem": "minecraft:lever",
+  "targetItem": "minecraft:diamond_axe",
+  "targetEnchantment": "sharpness",
+  "targetEnchantmentLevel": 5,
   "desiredQuantity": 1,
+  "acquisitionCostPerItem": 0,
   "guiClickDelay": 10,
   "itemDelay": 30,
   "commandDelay": 5,
@@ -150,7 +155,7 @@ Config lưu tại: `.minecraft/config/asell.json`
   "discordWebhookUrl": "",
   "confirmSlotIndex": 15,
   "guiTitleContains": "",
-  "autoOrder": false,
+  "autoOrder": true,
   "orderCommand": "order",
   "protectedItems": [
     "minecraft:diamond",
@@ -171,6 +176,7 @@ Config lưu tại: `.minecraft/config/asell.json`
 | `guiTimeout` | Tick timeout chờ GUI mở | `100` |
 | `autoConfirmGui` | Tự click xác nhận trong GUI | `true` |
 | `chatNotifications` | Hiện thông báo trong chat | `true` |
+| `acquisitionCostPerItem` | Cost mua mỗi item từ order để tính profit | `0` |
 | `discordWebhookEnabled` | Bật thông báo Discord tùy chọn | `false` |
 | `discordWebhookUrl` | Discord webhook URL, chỉ lưu local | `""` |
 | `confirmSlotIndex` | Slot fallback nếu auto-detect lỗi | `15` |
@@ -211,7 +217,9 @@ Webhook mặc định tắt. Để bật, sửa `config/asell.json` trong profil
 }
 ```
 
-Mod chỉ chấp nhận HTTPS webhook của `discord.com` hoặc `discordapp.com` và gửi thông báo bất đồng bộ khi bắt đầu, list thành công, hoàn tất hoặc dừng do lỗi.
+Mod chỉ chấp nhận HTTPS webhook của `discord.com` hoặc `discordapp.com` và gửi thông báo bất đồng bộ khi bắt đầu, collect order, list thành công, xác nhận sale, hoàn tất hoặc dừng do lỗi.
+
+Financial report gồm số item collected/listed/sold, gross listed value, realized revenue, cost mỗi item, projected profit và realized profit. Đặt cost bằng `/asell cost 300k`, kiểm tra bằng `/asell status`, hoặc gửi snapshot Discord bằng `/asell report`.
 
 ## 🔧 Build từ source
 
