@@ -6,7 +6,9 @@ import com.donutsell.util.ChatUtils;
 import com.donutsell.util.DiscordWebhook;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.Registries;
 import net.minecraft.screen.slot.SlotActionType;
 
@@ -399,12 +401,11 @@ public class SellTaskManager {
         String name = heldItemTemplate.getName().getString().toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
         StringBuilder command = new StringBuilder("ah ").append(name);
-        for (net.minecraft.text.Text line : InventoryUtils.getItemLore(heldItemTemplate)) {
-            String lore = line.getString().toLowerCase(Locale.ROOT);
-            if (lore.contains("sharpness") || lore.contains("efficiency") || lore.contains("fortune")
-                    || lore.contains("protection") || lore.contains("mending")) {
-                command.append(' ').append(lore.replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim());
-            }
+        for (RegistryEntry<Enchantment> ench : heldItemTemplate.getEnchantments().getEnchantments()) {
+            int level = heldItemTemplate.getEnchantments().getLevel(ench);
+            String enchantName = ench.value().description().getString().toLowerCase(Locale.ROOT)
+                    .replaceAll("[^a-z0-9 ]", " ").replaceAll("\\s+", " ").trim();
+            if (!enchantName.isEmpty()) command.append(' ').append(enchantName).append(' ').append(level);
         }
         return command.toString();
     }
@@ -574,7 +575,7 @@ public class SellTaskManager {
             if (slot == null || !slot.hasStack()) continue;
             ItemStack stack = slot.getStack();
             boolean targetMatch = isHeldWorkflow()
-                    ? InventoryUtils.isTargetStack(stack, heldItemTemplate)
+                    ? InventoryUtils.isSimilarStack(stack, heldItemTemplate)
                     : InventoryUtils.isTargetStack(stack, config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel);
             if (!targetMatch) continue;
@@ -946,7 +947,7 @@ public class SellTaskManager {
             ItemStack orderStack = slot.getStack();
             String itemId = InventoryUtils.getItemId(orderStack);
             boolean exactTarget = isHeldWorkflow()
-                    ? InventoryUtils.isTargetStack(orderStack, heldItemTemplate)
+                    ? InventoryUtils.isSimilarStack(orderStack, heldItemTemplate)
                     : InventoryUtils.isTargetStack(orderStack, config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel);
             boolean loreTarget = orderStack.getName().getString().toLowerCase(Locale.ROOT).contains("diamond axe")
@@ -1084,7 +1085,7 @@ public class SellTaskManager {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
 
             if (slot != null && slot.hasStack()
-                    && (isHeldWorkflow() ? InventoryUtils.isTargetStack(slot.getStack(), heldItemTemplate)
+                    && (isHeldWorkflow() ? InventoryUtils.isSimilarStack(slot.getStack(), heldItemTemplate)
                     : InventoryUtils.isTargetStack(slot.getStack(), config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel))) {
                 if (config.chatNotifications) {
