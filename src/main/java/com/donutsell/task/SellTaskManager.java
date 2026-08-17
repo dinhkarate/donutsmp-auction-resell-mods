@@ -428,15 +428,28 @@ public class SellTaskManager {
     }
 
     private int currentTargetCount() {
-        return isHeldWorkflow()
-                ? InventoryUtils.getTotalCount(heldItemTemplate)
-                : InventoryUtils.getTotalCount(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
+        if (isHeldWorkflow()) {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.player == null) return 0;
+            String targetId = InventoryUtils.getItemId(heldItemTemplate);
+            int count = 0;
+            for (ItemStack stack : mc.player.getInventory().main) {
+                if (!stack.isEmpty() && InventoryUtils.getItemId(stack).equals(targetId)) {
+                    count += stack.getCount();
+                }
+            }
+            return count;
+        }
+        return InventoryUtils.getTotalCount(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
     }
 
     private boolean isHoldingCurrentTarget() {
-        return isHeldWorkflow()
-                ? InventoryUtils.isTargetStack(MinecraftClient.getInstance().player.getMainHandStack(), heldItemTemplate)
-                : InventoryUtils.isHoldingTargetItem(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
+        if (isHeldWorkflow()) {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            return mc.player != null
+                    && InventoryUtils.isSameItemType(mc.player.getMainHandStack(), heldItemTemplate);
+        }
+        return InventoryUtils.isHoldingTargetItem(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
     }
 
     private int currentMainHandCount() {
@@ -446,15 +459,36 @@ public class SellTaskManager {
     }
 
     private int currentFindItemSlot() {
-        return isHeldWorkflow()
-                ? InventoryUtils.findItemSlot(heldItemTemplate)
-                : InventoryUtils.findItemSlot(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
+        if (isHeldWorkflow()) {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.player == null) return -1;
+            int selectedSlot = mc.player.getInventory().selectedSlot;
+            String targetId = InventoryUtils.getItemId(heldItemTemplate);
+            for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
+                if (i != selectedSlot && InventoryUtils.isSameItemType(
+                        mc.player.getInventory().main.get(i), heldItemTemplate)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        return InventoryUtils.findItemSlot(config.targetItem, config.targetEnchantment, config.targetEnchantmentLevel);
     }
 
     private int currentFindSlotWithMinCount(int minCount, int excludeSlot) {
-        return isHeldWorkflow()
-                ? InventoryUtils.findSlotWithMinCount(heldItemTemplate, minCount, excludeSlot)
-                : InventoryUtils.findSlotWithMinCount(config.targetItem, config.targetEnchantment,
+        if (isHeldWorkflow()) {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.player == null) return -1;
+            for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
+                if (i != excludeSlot && InventoryUtils.isSameItemType(
+                        mc.player.getInventory().main.get(i), heldItemTemplate)
+                        && mc.player.getInventory().main.get(i).getCount() >= minCount) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        return InventoryUtils.findSlotWithMinCount(config.targetItem, config.targetEnchantment,
                 config.targetEnchantmentLevel, minCount, excludeSlot);
     }
 
@@ -1050,7 +1084,7 @@ public class SellTaskManager {
             ItemStack orderStack = slot.getStack();
             String itemId = InventoryUtils.getItemId(orderStack);
             boolean exactTarget = isHeldWorkflow()
-                    ? InventoryUtils.isSameItemAndEnchants(orderStack, heldItemTemplate)
+                    ? InventoryUtils.isSameItemType(orderStack, heldItemTemplate)
                     : InventoryUtils.isTargetStack(orderStack, config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel);
             boolean loreTarget = orderStack.getName().getString().toLowerCase(Locale.ROOT).contains("diamond axe")
@@ -1188,7 +1222,7 @@ public class SellTaskManager {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
 
             if (slot != null && slot.hasStack()
-                    && (isHeldWorkflow() ? InventoryUtils.isSameItemAndEnchants(slot.getStack(), heldItemTemplate)
+                    && (isHeldWorkflow() ? InventoryUtils.isSameItemType(slot.getStack(), heldItemTemplate)
                     : InventoryUtils.isTargetStack(slot.getStack(), config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel))) {
                 if (config.chatNotifications) {

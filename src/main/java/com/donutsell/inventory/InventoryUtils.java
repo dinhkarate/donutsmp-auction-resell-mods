@@ -66,6 +66,12 @@ public class InventoryUtils {
                 && ItemStack.areItemsAndComponentsEqual(stack, template);
     }
 
+    /** Same item type only (registry id); used to break over-strict enchant loops. */
+    public static boolean isSameItemType(ItemStack a, ItemStack b) {
+        return a != null && b != null && !a.isEmpty() && !b.isEmpty()
+                && getItemId(a).equals(getItemId(b));
+    }
+
     /**
      * Lenient identity match used for Auction House and order listings: same item type
      * and every enchantment of the template present at the same level. Custom name,
