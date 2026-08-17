@@ -163,6 +163,7 @@ Use it responsibly: automation may still violate your server's rules.
 | `/asell status` | Show live counts, gross value, revenue and profits |
 | `/asell autoorder on\|off` | Toggle automatic `/order` refill |
 | `/asell sellinv` | Open `/sell`, push entire inventory in, click the green confirm |
+| `/asell lang vi\|en` | Pick the display language (vi or en); prompted on first run |
 | `/asell sellclick <min> <max>` | Ticks between each item move in `/sell` (in-game) |
 | `/asell sellconfirm <min> <max>` | Ticks to wait before the confirm click (in-game) |
 | `/asell stop` | Stop the current task |
@@ -214,6 +215,7 @@ Use it responsibly: automation may still violate your server's rules.
 | `itemDelay` | Ticks between sales (`/asell delay`, 5–600) — raise for a slower cadence | `30` |
 | `breakAfterSalesMin/Max` | Sales before a human-like break | `10/20` |
 | `breakSecondsMin/Max` | Break length in seconds | `5/10` |
+| `language` | `vi` or `en`; empty = asks on first run (`/asell lang`) | `""` |
 | `ownPriceCheckChance` | Chance to run the own-listing scan (lower = less regular pattern) | `1.0` |
 | `sellInvClickDelayMin/Max` | `/sell` workflow: random ticks between item moves | `8/25` |
 | `sellInvConfirmDelayMin/Max` | `/sell` workflow: random ticks before confirm | `20/60` |

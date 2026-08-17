@@ -65,6 +65,9 @@ public class DonutSellConfig {
     /** Before pricing, check own lowest listing (e.g. /ah <player> <item>) and keep the price when already cheapest. */
     public boolean useOwnPriceCheck = true;
 
+    /** Display language: "vi" or "en". Empty = first run, player picks via /asell lang. */
+    public String language = "";
+
     /** Chance (0-1) to run the own-listing scan; lower = less regular bot pattern. */
     public double ownPriceCheckChance = 1.0;
 
@@ -199,6 +202,7 @@ public class DonutSellConfig {
         this.maxReconnectAttempts = other.maxReconnectAttempts;
         this.autoResumeSell = other.autoResumeSell;
         this.useOwnPriceCheck = other.useOwnPriceCheck;
+        this.language = other.language;
         this.ownPriceCheckChance = other.ownPriceCheckChance;
         this.sellInvClickDelayMin = other.sellInvClickDelayMin;
         this.sellInvClickDelayMax = other.sellInvClickDelayMax;

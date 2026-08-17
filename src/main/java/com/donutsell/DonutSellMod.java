@@ -62,6 +62,12 @@ public class DonutSellMod implements ClientModInitializer {
         // Load configuration
         config = DonutSellConfig.load();
 
+        // Apply saved language; prompt for one on first run
+        ChatUtils.setLang(config.language);
+        if (config.language == null || config.language.isBlank()) {
+            ChatUtils.sendInfo("Chọn ngôn ngữ / Choose language: §f/asell lang vi§r hoặc §f/asell lang en");
+        }
+
         // Create the task manager (state machine)
         taskManager = new SellTaskManager(config);
 
@@ -87,8 +93,8 @@ public class DonutSellMod implements ClientModInitializer {
                 wasReconnecting = false;
                 reconnectTicks = -1;
                 reconnectAttempts = 0;
-                if (config.chatNotifications) ChatUtils.sendSuccess("Đã reconnect thành công!");
-                DiscordWebhook.send(config, "Đã reconnect thành công; thị trường tiếp tục.");
+                if (config.chatNotifications) ChatUtils.sendSuccess(ChatUtils.lang("Đã reconnect thành công!", "Reconnected successfully!"));
+                DiscordWebhook.send(config, ChatUtils.lang("Đã reconnect thành công; thị trường tiếp tục.", "Reconnected successfully; resuming the market."));
                 if (config.autoResumeSell) taskManager.resumeLastRun();
             }
         });
@@ -104,10 +110,10 @@ public class DonutSellMod implements ClientModInitializer {
                     reconnectAttempts = 0;
                     wasReconnecting = true;
                     if (config.chatNotifications) {
-                        ChatUtils.sendWarning("Bị disconnect! Sẽ tự reconnect sau "
-                                + config.reconnectDelaySeconds + " giây...");
+                        ChatUtils.sendWarning(ChatUtils.lang("Bị disconnect! Sẽ tự reconnect sau ", "Disconnected! Reconnecting in ")
+                                + config.reconnectDelaySeconds + ChatUtils.lang(" giây...", " seconds..."));
                     }
-                    DiscordWebhook.send(config, "Bị disconnect; tự reconnect sau "
+                    DiscordWebhook.send(config, ChatUtils.lang("Bị disconnect; tự reconnect sau ", "Disconnected; reconnecting in ")
                             + config.reconnectDelaySeconds + "s (nỗ lực 1/" + config.maxReconnectAttempts + ")");
                 }
             }
@@ -208,10 +214,10 @@ public class DonutSellMod implements ClientModInitializer {
             reconnectTicks = Math.max(2, config.reconnectDelaySeconds * 20);
             final ServerInfo target = lastServerInfo;
             if (config.chatNotifications) {
-                ChatUtils.sendInfo("Reconnect nỗ lực " + reconnectAttempts + "/"
-                        + config.maxReconnectAttempts + " → " + target.address);
+                ChatUtils.sendInfo(ChatUtils.lang("Reconnect nỗ lực ", "Reconnect attempt ") + reconnectAttempts + ChatUtils.lang("/", "/")
+                        + config.maxReconnectAttempts + ChatUtils.lang(" → ", " -> ") + target.address);
             }
-            DiscordWebhook.send(config, "Reconnect nỗ lực " + reconnectAttempts + "/"
+            DiscordWebhook.send(config, ChatUtils.lang("Reconnect nỗ lực ", "Reconnect attempt ") + reconnectAttempts + "/"
                     + config.maxReconnectAttempts);
             client.execute(() -> ConnectScreen.connect(
                     client.currentScreen, client,
@@ -221,10 +227,10 @@ public class DonutSellMod implements ClientModInitializer {
             reconnectTicks = -1;
             wasReconnecting = false;
             taskManager.clearLastWorkflow();
-            DiscordWebhook.send(config, "Không reconnect được sau " + reconnectAttempts
+            DiscordWebhook.send(config, ChatUtils.lang("Không reconnect được sau ", "Could not reconnect after ") + reconnectAttempts
                     + " lần. Nếu lỗi 'invalid session' hãy restart launcher để mod không tự làm gì thêm.");
             if (config.chatNotifications) {
-                ChatUtils.sendError("Hết số lần reconnect. Nếu 'invalid session' → restart game/launcher.");
+                ChatUtils.sendError(ChatUtils.lang("Hết số lần reconnect. Nếu 'invalid session' → restart game/launcher.", "Out of reconnect attempts. If 'invalid session', restart the game/launcher."));
             }
         }
     }

@@ -138,7 +138,7 @@ public class SellTaskManager {
     public void startHeldItemUndercut(int undercut, String searchQuery) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.player.getMainHandStack().isEmpty()) {
-            ChatUtils.sendError("Hãy cầm item mẫu trên tay trước khi chạy lệnh.");
+            ChatUtils.sendError(ChatUtils.lang("Hãy cầm item mẫu trên tay trước khi chạy lệnh.", "Hold the sample item in your hand first."));
             return;
         }
         heldItemTemplate = mc.player.getMainHandStack().copyWithCount(1);
@@ -162,7 +162,7 @@ public class SellTaskManager {
 
     private void beginHeldWorkflow() {
         if (heldItemTemplate == null || heldItemTemplate.isEmpty()) {
-            ChatUtils.sendError("Không có item mẫu. Hãy cầm item rồi chạy lại lệnh.");
+            ChatUtils.sendError(ChatUtils.lang("Không có item mẫu. Hãy cầm item rồi chạy lại lệnh.", "No sample item. Hold the item and run the command again."));
             return;
         }
         config.heldItemWorkflow = true;
@@ -240,12 +240,12 @@ public class SellTaskManager {
 
     public void startSellInv() {
         if (isRunning()) {
-            ChatUtils.sendWarning("Đang chạy! Dùng /asell stop để dừng trước.");
+            ChatUtils.sendWarning(ChatUtils.lang("Đang chạy! Dùng /asell stop để dừng trước.", "Already running! Use /asell stop first."));
             return;
         }
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.world == null) {
-            ChatUtils.sendError("Bạn phải đang ở trong game!");
+            ChatUtils.sendError(ChatUtils.lang("Bạn phải đang ở trong game!", "You must be in-game!"));
             return;
         }
         sellInvMoved = 0;
@@ -255,8 +255,8 @@ public class SellTaskManager {
         lastWorkflowMode = "sellinv";
         tickCounter = 0;
         state = SellState.SELLINV_OPEN;
-        ChatUtils.sendSuccess("═══ Bắt đầu /sell toàn bộ inventory ═══");
-        if (config.chatNotifications) ChatUtils.sendInfo("Dùng /asell stop để dừng.");
+        ChatUtils.sendSuccess(ChatUtils.lang("═══ Bắt đầu /sell toàn bộ inventory ═══", "=== Selling entire inventory via /sell ==="));
+        if (config.chatNotifications) ChatUtils.sendInfo(ChatUtils.lang("Dùng /asell stop để dừng.", "Use /asell stop to stop."));
     }
 
     private int randomTicks(int min, int max) {
@@ -272,20 +272,20 @@ public class SellTaskManager {
 
     public void start(int sellPrice) {
         if (isRunning()) {
-            ChatUtils.sendWarning("Đang chạy! Dùng /asell stop để dừng trước.");
+            ChatUtils.sendWarning(ChatUtils.lang("Đang chạy! Dùng /asell stop để dừng trước.", "Already running! Use /asell stop first."));
             return;
         }
 
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.world == null) {
-            ChatUtils.sendError("Bạn phải đang ở trong game!");
+            ChatUtils.sendError(ChatUtils.lang("Bạn phải đang ở trong game!", "You must be in-game!"));
             return;
         }
 
         // Warn about Pause on Lost Focus
         if (mc.options.pauseOnLostFocus) {
-            ChatUtils.sendWarning("⚠ 'Pause on Lost Focus' đang BẬT!");
-            ChatUtils.sendInfo("Mod sẽ không chạy khi alt-tab. Vào Options → Video Settings → Pause on Lost Focus = OFF.");
+            ChatUtils.sendWarning(ChatUtils.lang("⚠ 'Pause on Lost Focus' đang BẬT!", "⚠ 'Pause on Lost Focus' is ON!"));
+            ChatUtils.sendInfo(ChatUtils.lang("Mod sẽ không chạy khi alt-tab. Vào Options → Video Settings → Pause on Lost Focus = OFF.", "The mod will not run while alt-tabbed. Set Options -> Video Settings -> Pause on Lost Focus = OFF."));
         }
 
         this.price = sellPrice;
@@ -318,36 +318,36 @@ public class SellTaskManager {
 
         int totalItems = currentTargetCount();
         if (totalItems == 0 && !config.autoOrder) {
-            ChatUtils.sendError("Không tìm thấy item: " + config.targetItem);
+            ChatUtils.sendError(ChatUtils.lang("Không tìm thấy item: ", "Item not found: ") + config.targetItem);
             state = SellState.ERROR;
             return;
         }
 
-        ChatUtils.sendSuccess("═══ Bắt đầu bán tự động ═══");
-        DiscordWebhook.send(config, "Bắt đầu ASell | item=" + config.targetItem
+        ChatUtils.sendSuccess(ChatUtils.lang("═══ Bắt đầu bán tự động ═══", "=== Auto sell started ==="));
+        DiscordWebhook.send(config, ChatUtils.lang("Bắt đầu ASell | item=", "ASell started | item=") + config.targetItem
                 + " | enchant=" + config.targetEnchantment + " " + config.targetEnchantmentLevel
                 + (dynamicPriceRun ? " | chế độ=smart undercut " + config.undercutAmount : " | giá=" + sellPrice));
-        ChatUtils.sendInfo("Item: §f" + config.targetItem);
+        ChatUtils.sendInfo(ChatUtils.lang("Item: §f", "Item: §f") + config.targetItem);
         if (dynamicPriceRun) {
-            ChatUtils.sendInfo("Giá: §fquét AH rồi undercut " + config.undercutAmount);
+            ChatUtils.sendInfo(ChatUtils.lang("Giá: §fquét AH rồi undercut ", "Price: §fscan AH then undercut ") + config.undercutAmount);
         } else {
-            ChatUtils.sendInfo("Giá: §f" + sellPrice);
+            ChatUtils.sendInfo(ChatUtils.lang("Giá: §f", "Price: §f") + sellPrice);
         }
-        ChatUtils.sendInfo("Số lượng/lần: §f" + config.desiredQuantity);
+        ChatUtils.sendInfo(ChatUtils.lang("Số lượng/lần: §f", "Quantity/sale: §f") + config.desiredQuantity);
         if (totalItems > 0) {
-            ChatUtils.sendInfo("Tổng trong inventory: §f" + totalItems);
+            ChatUtils.sendInfo(ChatUtils.lang("Tổng trong inventory: §f", "Total in inventory: §f") + totalItems);
         }
         if (config.autoOrder) {
-            ChatUtils.sendInfo("Auto-order: §aBẬT §7(/" + config.orderCommand + ")");
+            ChatUtils.sendInfo(ChatUtils.lang("Auto-order: §aBẬT §7(/", "Auto-order: §aON §7(/") + config.orderCommand + ChatUtils.lang(")", ")"));
         }
-        ChatUtils.sendInfo("Dùng §f/asell stop §7để dừng.");
+        ChatUtils.sendInfo(ChatUtils.lang("Dùng §f/asell stop §7để dừng.", "Use §f/asell stop §7to stop."));
 
         state = SellState.PREPARING_ITEM;
     }
 
     public void stop() {
         if (state == SellState.IDLE) {
-            ChatUtils.sendWarning("Không có tác vụ nào đang chạy.");
+            ChatUtils.sendWarning(ChatUtils.lang("Không có tác vụ nào đang chạy.", "No task is currently running."));
             return;
         }
 
@@ -364,10 +364,10 @@ public class SellTaskManager {
             mc.player.closeHandledScreen();
         }
 
-        ChatUtils.sendWarning("═══ Đã dừng tác vụ ═══");
-        ChatUtils.sendInfo("Trạng thái trước: §f" + previousState);
-        DiscordWebhook.send(config, financialSummary("ASell đã dừng | trạng thái=" + previousState));
-        ChatUtils.sendInfo("Tổng đã bán: §f" + itemsSold + " lần");
+        ChatUtils.sendWarning(ChatUtils.lang("═══ Đã dừng tác vụ ═══", "=== Task stopped ==="));
+        ChatUtils.sendInfo(ChatUtils.lang("Trạng thái trước: §f", "Previous state: §f") + previousState);
+        DiscordWebhook.send(config, financialSummary(ChatUtils.lang("ASell đã dừng | trạng thái=", "ASell stopped | state=") + previousState));
+        ChatUtils.sendInfo(ChatUtils.lang("Tổng đã bán: §f", "Total sold: §f") + itemsSold + ChatUtils.lang(" lần", ""));
     }
 
     public boolean isRunning() {
@@ -389,9 +389,9 @@ public class SellTaskManager {
     public void sendFinancialReport() {
         String report = financialSummary("ASell financial report");
         if (DiscordWebhook.send(config, report)) {
-            ChatUtils.sendSuccess("Đã gửi financial report lên Discord webhook.");
+            ChatUtils.sendSuccess(ChatUtils.lang("Đã gửi financial report lên Discord webhook.", "Financial report sent to the Discord webhook."));
         } else {
-            ChatUtils.sendError("Webhook đang tắt hoặc URL không hợp lệ. Hãy rotate URL cũ rồi cấu hình URL mới.");
+            ChatUtils.sendError(ChatUtils.lang("Webhook đang tắt hoặc URL không hợp lệ. Hãy rotate URL cũ rồi cấu hình URL mới.", "Webhook is disabled or the URL is invalid. Rotate the old URL and set the new one."));
         }
     }
 
@@ -426,9 +426,9 @@ public class SellTaskManager {
         if (config.maxRunMinutes > 0
                 && System.currentTimeMillis() - runStartMillis > config.maxRunMinutes * 60_000L) {
             if (config.chatNotifications) {
-                ChatUtils.sendWarning("Đã chạy " + config.maxRunMinutes + " phút (maxRunMinutes); tự dừng.");
+                ChatUtils.sendWarning(ChatUtils.lang("Đã chạy ", "Ran for ") + config.maxRunMinutes + ChatUtils.lang(" phút (maxRunMinutes); tự dừng.", " minutes (maxRunMinutes); auto-stopping."));
             }
-            DiscordWebhook.send(config, "Tự dừng sau " + config.maxRunMinutes + " phút (maxRunMinutes).");
+            DiscordWebhook.send(config, ChatUtils.lang("Tự dừng sau ", "Auto-stopping after ") + config.maxRunMinutes + ChatUtils.lang(" phút (maxRunMinutes).", " minutes (maxRunMinutes)."));
             state = SellState.FINISHED;
             tickCounter = 0;
             return;
@@ -437,14 +437,14 @@ public class SellTaskManager {
         MinecraftClient mc = MinecraftClient.getInstance();
 
         if (mc.player == null || mc.world == null) {
-            if (config.chatNotifications) ChatUtils.sendError("Đã ngắt kết nối! Dừng tác vụ.");
+            if (config.chatNotifications) ChatUtils.sendError(ChatUtils.lang("Đã ngắt kết nối! Dừng tác vụ.", "Disconnected! Stopping the task."));
             state = SellState.IDLE;
             return;
         }
 
         String currentWorldKey = mc.world.getRegistryKey().getValue().toString();
         if (lastWorldKey != null && !lastWorldKey.equals(currentWorldKey)) {
-            if (config.chatNotifications) ChatUtils.sendWarning("Đã chuyển world/dimension! Dừng tác vụ.");
+            if (config.chatNotifications) ChatUtils.sendWarning(ChatUtils.lang("Đã chuyển world/dimension! Dừng tác vụ.", "World/dimension changed! Stopping the task."));
             state = SellState.IDLE;
             return;
         }
@@ -569,15 +569,15 @@ public class SellTaskManager {
     private void handlePreparingItem(MinecraftClient mc) {
         int totalCount = currentTargetCount();        if (totalCount == 0) {
             if (config.autoOrder && !hasTriedOrder) {
-                ChatUtils.sendInfo("📦 Hết đồ! Đang lấy thêm từ /" + config.orderCommand + "...");
+                ChatUtils.sendInfo(ChatUtils.lang("📦 Hết đồ! Đang lấy thêm từ /", "📦 Out of stock! Refilling from /") + config.orderCommand + ChatUtils.lang("...", "..."));
                 hasTriedOrder = true;
                 state = SellState.FETCHING_ORDER;
                 tickCounter = 0;
                 return;
             }
-            ChatUtils.sendSuccess("═══ Đã bán hết tất cả item! ═══");
-            ChatUtils.sendInfo("Tổng: §f" + itemsSold + " lần bán");
-            DiscordWebhook.send(config, financialSummary("ASell hoàn tất: không còn item/order có thể collect"));
+            ChatUtils.sendSuccess(ChatUtils.lang("═══ Đã bán hết tất cả item! ═══", "=== Sold all items! ==="));
+            ChatUtils.sendInfo(ChatUtils.lang("Tổng: §f", "Total: §f") + itemsSold + ChatUtils.lang(" lần bán", " sales"));
+            DiscordWebhook.send(config, financialSummary(ChatUtils.lang("ASell hoàn tất: không còn item/order có thể collect", "ASell finished: no items/orders left to collect")));
             state = SellState.FINISHED;
             return;
         }
@@ -596,7 +596,7 @@ public class SellTaskManager {
             int mainHandCount = currentMainHandCount();
             if (mainHandCount == config.desiredQuantity) {
                 if (config.chatNotifications) {
-                    ChatUtils.sendAction("Item sẵn sàng: " + config.desiredQuantity + "x " + config.targetItem);
+                    ChatUtils.sendAction(ChatUtils.lang("Item sẵn sàng: ", "Item ready: ") + config.desiredQuantity + ChatUtils.lang("x ", "x ") + config.targetItem);
                 }
                 state = dynamicPriceRun ? SellState.SMART_PRICING : SellState.SENDING_COMMAND;
                 tickCounter = 0;
@@ -604,7 +604,7 @@ public class SellTaskManager {
             } else if (mainHandCount > config.desiredQuantity) {
                 adjustDropCount = mainHandCount - config.desiredQuantity;
                 if (config.chatNotifications) {
-                    ChatUtils.sendInfo("Giảm số lượng: " + mainHandCount + " → " + config.desiredQuantity);
+                    ChatUtils.sendInfo(ChatUtils.lang("Giảm số lượng: ", "Reducing quantity: ") + mainHandCount + ChatUtils.lang(" → ", " -> ") + config.desiredQuantity);
                 }
                 state = SellState.ADJUSTING_QUANTITY;
                 tickCounter = 0;
@@ -614,14 +614,14 @@ public class SellTaskManager {
                         mc.player.getInventory().selectedSlot);
                 if (goodSlot >= 0) {
                     if (config.chatNotifications) {
-                        ChatUtils.sendInfo("Tìm thấy stack phù hợp tại slot " + goodSlot + ", đang chuyển...");
+                        ChatUtils.sendInfo(ChatUtils.lang("Tìm thấy stack phù hợp tại slot ", "Found a matching stack at slot ") + goodSlot + ChatUtils.lang(", đang chuyển...", ", moving..."));
                     }
                     InventoryUtils.swapToMainHand(goodSlot);
                     state = SellState.SWITCHING_HOTBAR;
                     tickCounter = 0;
                 } else {
                     if (config.chatNotifications) {
-                        ChatUtils.sendWarning("Không đủ " + config.desiredQuantity + " item, bán với " + mainHandCount);
+                        ChatUtils.sendWarning(ChatUtils.lang("Không đủ ", "Not enough ") + config.desiredQuantity + ChatUtils.lang(" item, bán với ", " item, selling with ") + mainHandCount);
                     }
                     state = dynamicPriceRun ? SellState.SMART_PRICING : SellState.SENDING_COMMAND;
                     tickCounter = 0;
@@ -632,16 +632,16 @@ public class SellTaskManager {
             if (slot >= 0) {
                 swapStallCount++;
                 if (swapStallCount > MAX_SWAP_ATTEMPTS) {
-                    ChatUtils.sendError("Không đưa được item lên tay sau " + swapStallCount
-                            + " lần thử; dừng (server từ chối swap click).");
-                    DiscordWebhook.send(config, "Dừng: không đưa được item lên tay (server từ chối click).");
+                    ChatUtils.sendError(ChatUtils.lang("Không đưa được item lên tay sau ", "Could not get the item into hand after ") + swapStallCount
+                            + ChatUtils.lang(" lần thử; dừng (server từ chối swap click).", " attempts; stopping (server rejects swap clicks)."));
+                    DiscordWebhook.send(config, ChatUtils.lang("Dừng: không đưa được item lên tay (server từ chối click).", "Stopped: could not move the item into hand (server rejects clicks)."));
                     state = SellState.ERROR;
                     tickCounter = 0;
                     return;
                 }
                 if (config.chatNotifications) {
-                    ChatUtils.sendAction("Chuyển item từ slot " + slot + " lên tay... (lần "
-                            + swapStallCount + "/" + MAX_SWAP_ATTEMPTS + ")");
+                    ChatUtils.sendAction(ChatUtils.lang("Chuyển item từ slot ", "Moving item from slot ") + slot + ChatUtils.lang(" lên tay... (lần ", " to hand... (attempt ")
+                            + swapStallCount + ChatUtils.lang("/", "/") + MAX_SWAP_ATTEMPTS + ChatUtils.lang(")", ")"));
                 }
                 if (swapStallCount == 2) {
                     String hand = mc.player.getMainHandStack().isEmpty()
@@ -660,8 +660,8 @@ public class SellTaskManager {
             } else {
                 retryCount++;
                 if (retryCount > MAX_RETRIES) {
-                    ChatUtils.sendError("Lỗi: Không thể tìm item sau " + MAX_RETRIES + " lần thử!");
-                    DiscordWebhook.send(config, "Lỗi: không tìm thấy item trong inventory.");
+                    ChatUtils.sendError(ChatUtils.lang("Lỗi: Không thể tìm item sau ", "Error: could not find the item after ") + MAX_RETRIES + ChatUtils.lang(" lần thử!", " attempts!"));
+                    DiscordWebhook.send(config, ChatUtils.lang("Lỗi: không tìm thấy item trong inventory.", "Error: item not found in inventory."));
                     state = SellState.ERROR;
                 }
             }
@@ -674,7 +674,7 @@ public class SellTaskManager {
         int screenSlot = InventoryUtils.toScreenSlot(selectedSlot);
 
         if (adjustDropCount <= 0) {
-            if (config.chatNotifications) ChatUtils.sendInfo("Đã điều chỉnh xong số lượng.");
+            if (config.chatNotifications) ChatUtils.sendInfo(ChatUtils.lang("Đã điều chỉnh xong số lượng.", "Quantity adjusted."));
             state = dynamicPriceRun ? SellState.SMART_PRICING : SellState.SENDING_COMMAND;
             tickCounter = 0;
             return;
@@ -699,11 +699,11 @@ public class SellTaskManager {
             if (emptySlot != -1) {
                 int emptyScreenSlot = InventoryUtils.toScreenSlot(emptySlot);
                 InventoryUtils.clickScreenSlot(emptyScreenSlot, 0, SlotActionType.PICKUP);
-                if (config.chatNotifications) ChatUtils.sendInfo("Đã chuyển đồ thừa vào slot " + emptySlot);
+                if (config.chatNotifications) ChatUtils.sendInfo(ChatUtils.lang("Đã chuyển đồ thừa vào slot ", "Moved excess items to slot ") + emptySlot);
                 itemPickupProtectionDelay = 0;
             } else {
                 InventoryUtils.clickScreenSlot(-999, 0, SlotActionType.PICKUP);
-                if (config.chatNotifications) ChatUtils.sendWarning("Kho đầy! Vứt đồ thừa xuống đất.");
+                if (config.chatNotifications) ChatUtils.sendWarning(ChatUtils.lang("Kho đầy! Vứt đồ thừa xuống đất.", "Inventory full! Dropping excess items."));
                 itemPickupProtectionDelay = 10 + (int) (Math.random() * 11);
             }
             adjustDropCount = 0;
@@ -735,12 +735,12 @@ public class SellTaskManager {
                 if (mc.getNetworkHandler() != null) {
                     mc.getNetworkHandler().sendCommand(smartScanCommand());
                 }
-                if (config.chatNotifications) ChatUtils.sendAction("Mở /" + smartScanCommand() + " để quét giá...");
+                if (config.chatNotifications) ChatUtils.sendAction(ChatUtils.lang("Mở /", "Opening /") + smartScanCommand() + ChatUtils.lang(" để quét giá...", " to scan prices..."));
             }
             tickCounter++;
             if (tickCounter > config.guiTimeout) {
-                ChatUtils.sendError("Không mở được GUI /ah; dừng để tránh bán sai giá.");
-                DiscordWebhook.send(config, "ASell lỗi: không mở được GUI /ah; đã dừng để tránh bán sai giá.");
+                ChatUtils.sendError(ChatUtils.lang("Không mở được GUI /ah; dừng để tránh bán sai giá.", "Could not open the /ah GUI; stopping to avoid a wrong price."));
+                DiscordWebhook.send(config, ChatUtils.lang("ASell lỗi: không mở được GUI /ah; đã dừng để tránh bán sai giá.", "ASell error: could not open /ah GUI; stopped to avoid a wrong price."));
                 state = SellState.ERROR;
                 tickCounter = 0;
             }
@@ -802,8 +802,8 @@ public class SellTaskManager {
         boolean hasOwn = ownLowestPrice != Integer.MAX_VALUE;
         boolean hasMarket = marketLowestPrice != Integer.MAX_VALUE;
         if (!hasOwn && !hasMarket) {
-            ChatUtils.sendWarning("Không tìm thấy giá nào trên AH; dừng.");
-            DiscordWebhook.send(config, "ASell dừng: không có giá AH để tham chiếu.");
+            ChatUtils.sendWarning(ChatUtils.lang("Không tìm thấy giá nào trên AH; dừng.", "No price found on the AH; stopping."));
+            DiscordWebhook.send(config, ChatUtils.lang("ASell dừng: không có giá AH để tham chiếu.", "ASell stopped: no AH price to reference."));
             state = SellState.FINISHED;
             return;
         }
@@ -816,17 +816,17 @@ public class SellTaskManager {
             target = marketLowestPrice - config.undercutAmount; // đối thủ rẻ hơn → undercut 1k
         }
         if (target < 1) {
-            ChatUtils.sendError("Giá sau tính toán không hợp lệ; dừng.");
+            ChatUtils.sendError(ChatUtils.lang("Giá sau tính toán không hợp lệ; dừng.", "Calculated price is invalid; stopping."));
             state = SellState.ERROR;
             return;
         }
         price = target;
         String ownedStr = hasOwn ? String.valueOf(ownLowestPrice) : "không có";
         if (config.chatNotifications) {
-            ChatUtils.sendSuccess("Giá của tôi: §f" + ownedStr + " §7| Giá thị trường: §f" + marketLowestPrice
-                    + " §7→ giá bán: §f" + price);
+            ChatUtils.sendSuccess(ChatUtils.lang("Giá của tôi: §f", "My price: §f") + ownedStr + ChatUtils.lang(" §7| Giá thị trường: §f", " §7| Market price: §f") + marketLowestPrice
+                    + ChatUtils.lang(" §7→ giá bán: §f", " §7-> sell price: §f") + price);
         }
-        DiscordWebhook.send(config, "Giá của tôi=" + ownedStr + " | thị trường=" + marketLowestPrice
+        DiscordWebhook.send(config, ChatUtils.lang("Giá của tôi=", "My price=") + ownedStr + ChatUtils.lang(" | thị trường=", " | market=") + marketLowestPrice
                 + " | giá list=" + price);
         state = SellState.SENDING_COMMAND;
         tickCounter = 0;
@@ -925,7 +925,7 @@ public class SellTaskManager {
         int sellPrice = this.price;
 
         String command = "ah sell " + sellPrice;
-        if (config.chatNotifications) ChatUtils.sendAction("Gửi lệnh: /" + command);
+        if (config.chatNotifications) ChatUtils.sendAction(ChatUtils.lang("Gửi lệnh: /", "Sending command: /") + command);
 
         if (mc.getNetworkHandler() != null) {
             mc.getNetworkHandler().sendCommand(command);
@@ -940,8 +940,8 @@ public class SellTaskManager {
 
         if (tickCounter > config.guiTimeout) {
             if (config.chatNotifications)
-                ChatUtils.sendWarning("Timeout chờ GUI xác nhận; chưa tính lần bán này.");
-            DiscordWebhook.send(config, "Timeout chờ GUI /ah sell; chưa xác nhận lần list.");
+                ChatUtils.sendWarning(ChatUtils.lang("Timeout chờ GUI xác nhận; chưa tính lần bán này.", "Timeout waiting for the confirm GUI; this sale is not counted."));
+            DiscordWebhook.send(config, ChatUtils.lang("Timeout chờ GUI /ah sell; chưa xác nhận lần list.", "Timeout waiting for /ah sell GUI; listing not confirmed."));
             state = SellState.COOLDOWN;
             tickCounter = 0;
             return;
@@ -954,12 +954,12 @@ public class SellTaskManager {
                     return;
                 }
             }
-            if (config.chatNotifications) ChatUtils.sendInfo("GUI đã mở! Chuẩn bị xác nhận...");
+            if (config.chatNotifications) ChatUtils.sendInfo(ChatUtils.lang("GUI đã mở! Chuẩn bị xác nhận...", "GUI opened! Preparing to confirm..."));
             if (config.autoConfirmGui) {
                 state = SellState.CLICKING_CONFIRM;
                 tickCounter = 0;
             } else {
-                ChatUtils.sendWarning("Chế độ thủ công: hãy tự xác nhận trong GUI.");
+                ChatUtils.sendWarning(ChatUtils.lang("Chế độ thủ công: hãy tự xác nhận trong GUI.", "Manual mode: confirm in the GUI yourself."));
                 state = SellState.COOLDOWN;
                 tickCounter = 0;
             }
@@ -1006,13 +1006,13 @@ public class SellTaskManager {
             if (slotToClick == -1) slotToClick = config.confirmSlotIndex;
 
             InventoryUtils.clickScreenSlot(slotToClick);
-            if (config.chatNotifications) ChatUtils.sendSuccess("✅ Xác nhận bán tại slot " + slotToClick);
+            if (config.chatNotifications) ChatUtils.sendSuccess(ChatUtils.lang("✅ Xác nhận bán tại slot ", "✅ Confirmed sale at slot ") + slotToClick);
             itemsSold++;
             grossListedValue += price;
-            DiscordWebhook.send(config, financialSummary("Đã list Diamond Axe Sharpness V | giá=" + price));
+            DiscordWebhook.send(config, financialSummary(ChatUtils.lang("Đã list Diamond Axe Sharpness V | giá=", "Listed Diamond Axe Sharpness V | price=") + price));
         } else {
             if (config.chatNotifications)
-                ChatUtils.sendWarning("GUI đóng trước khi click! Có thể đã bán thành công.");
+                ChatUtils.sendWarning(ChatUtils.lang("GUI đóng trước khi click! Có thể đã bán thành công.", "GUI closed before clicking! The sale may have succeeded."));
             itemsSold++;
         }
 
@@ -1026,7 +1026,7 @@ public class SellTaskManager {
             breakTicksRemaining--;
             if (breakTicksRemaining <= 0) {
                 isOnBreak = false;
-                ChatUtils.sendInfo("☕ Nghỉ giải lao xong! Tiếp tục bán...");
+                ChatUtils.sendInfo(ChatUtils.lang("☕ Nghỉ giải lao xong! Tiếp tục bán...", "☕ Break over! Resuming sales..."));
                 state = SellState.PREPARING_ITEM;
                 tickCounter = 0;
             }
@@ -1047,7 +1047,7 @@ public class SellTaskManager {
         if (tickCounter >= currentItemDelay) {
             if (config.chatNotifications) {
                 int remaining = currentTargetCount();
-                ChatUtils.sendInfo("Đã bán: §f" + itemsSold + " §7| Còn lại: §f" + remaining);
+                ChatUtils.sendInfo(ChatUtils.lang("Đã bán: §f", "Sold: §f") + itemsSold + ChatUtils.lang(" §7| Còn lại: §f", " §7| Left: §f") + remaining);
             }
             retryCount = 0;
 
@@ -1060,8 +1060,8 @@ public class SellTaskManager {
                 breakTicksRemaining = (config.breakSecondsMin + (int) (Math.random()
                         * (Math.max(1, config.breakSecondsMax - config.breakSecondsMin) + 1))) * 20;
                 isOnBreak = true;
-                ChatUtils.sendWarning("☕ Nghỉ giải lao "
-                        + String.format("%.1f", breakTicksRemaining / 20.0) + "s...");
+                ChatUtils.sendWarning(ChatUtils.lang("☕ Nghỉ giải lao ", "☕ Taking a break ")
+                        + String.format("%.1f", breakTicksRemaining / 20.0) + ChatUtils.lang("s...", "s..."));
                 return;
             }
 
@@ -1088,7 +1088,7 @@ public class SellTaskManager {
         if (mc.getNetworkHandler() != null) {
             mc.getNetworkHandler().sendCommand(config.orderCommand);
         }
-        if (config.chatNotifications) ChatUtils.sendAction("Gửi lệnh: /" + config.orderCommand);
+        if (config.chatNotifications) ChatUtils.sendAction(ChatUtils.lang("Gửi lệnh: /", "Sending command: /") + config.orderCommand);
 
         state = SellState.WAITING_ORDER_GUI;
         tickCounter = 0;
@@ -1103,7 +1103,7 @@ public class SellTaskManager {
         tickCounter++;
 
         if (tickCounter > config.guiTimeout) {
-            ChatUtils.sendWarning("Timeout chờ GUI order! Dừng tác vụ.");
+            ChatUtils.sendWarning(ChatUtils.lang("Timeout chờ GUI order! Dừng tác vụ.", "Timeout waiting for the order GUI! Stopping."));
             if (mc.player != null) mc.player.closeHandledScreen();
             state = SellState.FINISHED;
             tickCounter = 0;
@@ -1115,7 +1115,7 @@ public class SellTaskManager {
         if (mc.player == null || mc.player.currentScreenHandler == null) return;
 
         String title = mc.currentScreen.getTitle().getString();
-        if (config.chatNotifications) ChatUtils.sendInfo("GUI order đã mở: §f" + title);
+        if (config.chatNotifications) ChatUtils.sendInfo(ChatUtils.lang("GUI order đã mở: §f", "Order GUI opened: §f") + title);
 
         int totalSlots = mc.player.currentScreenHandler.slots.size();
         int containerSize = totalSlots - 36;
@@ -1128,8 +1128,8 @@ public class SellTaskManager {
             String displayName = slot.getStack().getName().getString().toLowerCase();
             if (displayName.contains("your orders") || displayName.contains("your order")) {
                 if (config.chatNotifications)
-                    ChatUtils.sendInfo("Click nút §f" + slot.getStack().getName().getString()
-                            + " §7(slot " + i + ")");
+                    ChatUtils.sendInfo(ChatUtils.lang("Click nút §f", "Clicking button §f") + slot.getStack().getName().getString()
+                            + ChatUtils.lang(" §7(slot ", " §7(slot ") + i + ChatUtils.lang(")", ")"));
                 InventoryUtils.clickScreenSlot(i);
                 state = SellState.NAVIGATING_TO_ORDER_EDIT;
                 tickCounter = 0;
@@ -1148,7 +1148,7 @@ public class SellTaskManager {
         tickCounter++;
 
         if (tickCounter > config.guiTimeout) {
-            ChatUtils.sendWarning("Timeout chờ màn hình Your Orders! Dừng tác vụ.");
+            ChatUtils.sendWarning(ChatUtils.lang("Timeout chờ màn hình Your Orders! Dừng tác vụ.", "Timeout waiting for Your Orders! Stopping."));
             if (mc.player != null) mc.player.closeHandledScreen();
             state = SellState.FINISHED;
             tickCounter = 0;
@@ -1183,8 +1183,8 @@ public class SellTaskManager {
                     .anyMatch(line -> line.contains("sharpness v") || line.contains("sharpness 5"));
             if (itemId.equals(config.targetItem) && (exactTarget || loreTarget)) {
                 if (config.chatNotifications)
-                    ChatUtils.sendInfo("Chọn order §f" + slot.getStack().getName().getString()
-                            + " §7(slot " + i + ")");
+                    ChatUtils.sendInfo(ChatUtils.lang("Chọn order §f", "Selecting order §f") + slot.getStack().getName().getString()
+                            + ChatUtils.lang(" §7(slot ", " §7(slot ") + i + ChatUtils.lang(")", ")"));
                 InventoryUtils.clickScreenSlot(i);
                 orderFoundSlot = i;
                 state = SellState.NAVIGATING_TO_COLLECT;
@@ -1204,7 +1204,7 @@ public class SellTaskManager {
         tickCounter++;
 
         if (tickCounter > config.guiTimeout) {
-            ChatUtils.sendWarning("Timeout chờ nút Collect! Dừng tác vụ.");
+            ChatUtils.sendWarning(ChatUtils.lang("Timeout chờ nút Collect! Dừng tác vụ.", "Timeout waiting for the Collect button! Stopping."));
             if (mc.player != null) mc.player.closeHandledScreen();
             state = SellState.FINISHED;
             tickCounter = 0;
@@ -1217,11 +1217,11 @@ public class SellTaskManager {
             int collectedNow = Math.max(0, totalCount - inventoryCountBeforeCollect);
             itemsCollected += collectedNow;
             if (totalCount > 0) {
-                ChatUtils.sendSuccess("Đã lấy được §f" + collectedNow + " §7item (server tự collect)!");
-                DiscordWebhook.send(config, financialSummary("Đã collect " + collectedNow + " item từ /order"));
+                ChatUtils.sendSuccess(ChatUtils.lang("Đã lấy được §f", "Collected §f") + collectedNow + ChatUtils.lang(" §7item (server tự collect)!", " §7item (server auto-collected)!"));
+                DiscordWebhook.send(config, financialSummary(ChatUtils.lang("Đã collect ", "Collected ") + collectedNow + ChatUtils.lang(" item từ /order", " item from /order")));
                 state = SellState.PREPARING_ITEM;
             } else {
-                ChatUtils.sendWarning("GUI đóng bất ngờ, không lấy được item. Dừng.");
+                ChatUtils.sendWarning(ChatUtils.lang("GUI đóng bất ngờ, không lấy được item. Dừng.", "GUI closed unexpectedly; no items collected. Stopping."));
                 state = SellState.FINISHED;
             }
             tickCounter = 0;
@@ -1254,7 +1254,7 @@ public class SellTaskManager {
 
             if (isCollect) {
                 if (config.chatNotifications)
-                    ChatUtils.sendInfo("Nhấn §fCollect §7(slot " + i + ")");
+                    ChatUtils.sendInfo(ChatUtils.lang("Nhấn §fCollect §7(slot ", "Clicking §fCollect §7(slot ") + i + ChatUtils.lang(")", ")"));
                 inventoryCountBeforeCollect = currentTargetCount();
                 InventoryUtils.clickScreenSlot(i);
                 // Sau khi click Collect, GUI mới sẽ mở ra
@@ -1286,10 +1286,10 @@ public class SellTaskManager {
             int collectedNow = Math.max(0, totalCount - inventoryCountBeforeCollect);
             itemsCollected += collectedNow;
             if (totalCount > 0) {
-                ChatUtils.sendSuccess("Đã lấy được §f" + collectedNow + " §7item từ order! Tiếp tục bán...");
-                DiscordWebhook.send(config, financialSummary("Đã collect " + collectedNow + " item từ /order"));
+                ChatUtils.sendSuccess(ChatUtils.lang("Đã lấy được §f", "Collected §f") + collectedNow + ChatUtils.lang(" §7item từ order! Tiếp tục bán...", " §7item from the order! Resuming..."));
+                DiscordWebhook.send(config, financialSummary(ChatUtils.lang("Đã collect ", "Collected ") + collectedNow + ChatUtils.lang(" item từ /order", " item from /order")));
             } else {
-                ChatUtils.sendWarning("Không tìm thấy item trong inventory. Thử tiếp tục...");
+                ChatUtils.sendWarning(ChatUtils.lang("Không tìm thấy item trong inventory. Thử tiếp tục...", "No item found in inventory. Retrying..."));
             }
             // Luôn để PREPARING_ITEM tự xử lý (sẽ FINISH nếu thực sự hết đồ)
             state = SellState.PREPARING_ITEM;
@@ -1318,8 +1318,8 @@ public class SellTaskManager {
                 if (config.chatNotifications) {
                     String itemName = slot.getStack().getName().getString();
                     int count = slot.getStack().getCount();
-                    ChatUtils.sendInfo("Lấy 1 stack: §f" + count + "x " + itemName
-                            + " §7(slot " + i + "). Đóng GUI chờ sync...");
+                    ChatUtils.sendInfo(ChatUtils.lang("Lấy 1 stack: §f", "Taking 1 stack: §f") + count + ChatUtils.lang("x ", "x ") + itemName
+                            + ChatUtils.lang(" §7(slot ", " §7(slot ") + i + ChatUtils.lang("). Đóng GUI chờ sync...", "). Closing GUI to wait for sync..."));
                 }
                 // Shift+Click 1 lần duy nhất để lấy 1 stack
                 InventoryUtils.clickScreenSlot(i, 0, SlotActionType.QUICK_MOVE);
@@ -1333,7 +1333,7 @@ public class SellTaskManager {
         }
 
         // Không tìm thấy slot nào có item
-        if (config.chatNotifications) ChatUtils.sendWarning("GUI Collect trống. Đóng GUI...");
+        if (config.chatNotifications) ChatUtils.sendWarning(ChatUtils.lang("GUI Collect trống. Đóng GUI...", "Collect GUI is empty. Closing..."));
         mc.player.closeHandledScreen();
         orderCollectIndex = -999;
         tickCounter = 0;
@@ -1364,13 +1364,13 @@ public class SellTaskManager {
         if (ahFullWaitTicks % 1200 == 0 && ahFullWaitTicks > 0) {
             int minutesLeft = (ahFullWaitTicks / 20) / 60;
             if (config.chatNotifications) {
-                ChatUtils.sendInfo("Đang chờ gian hàng... (Sẽ tự dậy sau khoảng " + minutesLeft + " phút, hoặc khi có người mua).");
+                ChatUtils.sendInfo(ChatUtils.lang("Đang chờ gian hàng... (Sẽ tự dậy sau khoảng ", "Waiting for an AH slot... (will wake up in about ") + minutesLeft + ChatUtils.lang(" phút, hoặc khi có người mua).", " minutes, or when someone buys)."));
             }
         }
 
         if (ahFullWaitTicks <= 0) {
             if (config.chatNotifications) {
-                ChatUtils.sendSuccess("Đã hết thời gian AFK, đang thử thức dậy bán lại...");
+                ChatUtils.sendSuccess(ChatUtils.lang("Đã hết thời gian AFK, đang thử thức dậy bán lại...", "AFK wait over, trying to sell again..."));
             }
             state = SellState.PREPARING_ITEM;
             tickCounter = 0;
@@ -1388,7 +1388,7 @@ public class SellTaskManager {
             int seconds = (ahFullWaitTicks / 20) % 60;
 
             if (config.chatNotifications) {
-                ChatUtils.sendWarning("Gian hàng ĐẦY! Đóng băng bot trong " + minutes + " phút " + seconds + " giây...");
+                ChatUtils.sendWarning(ChatUtils.lang("Gian hàng ĐẦY! Đóng băng bot trong ", "Listing limit FULL! Pausing the bot for ") + minutes + ChatUtils.lang(" phút ", " min ") + seconds + ChatUtils.lang(" giây...", " seconds..."));
             }
         }
     }
@@ -1401,7 +1401,7 @@ public class SellTaskManager {
             itemsSold++;
             grossListedValue += price;
             DiscordWebhook.send(config, financialSummary("Server xác nhận đã list | giá=" + price));
-            if (config.chatNotifications) ChatUtils.sendSuccess("✅ Server xác nhận: đã list giá " + price);
+            if (config.chatNotifications) ChatUtils.sendSuccess(ChatUtils.lang("✅ Server xác nhận: đã list giá ", "✅ Server confirmed: listed at ") + price);
             state = SellState.COOLDOWN;
             tickCounter = 0;
         }
@@ -1415,7 +1415,7 @@ public class SellTaskManager {
         if (salePrice != null) {
             confirmedSales += quantity;
             realizedRevenue += (long) salePrice * quantity;
-            DiscordWebhook.send(config, financialSummary("Đã bán " + quantity
+            DiscordWebhook.send(config, financialSummary(ChatUtils.lang("Đã bán ", "Sold ") + quantity
                     + " Diamond Axe | doanh thu=" + ((long) salePrice * quantity)));
         }
 
@@ -1425,7 +1425,7 @@ public class SellTaskManager {
             ahFullWaitTicks = 0;
             
             if (config.chatNotifications) {
-                ChatUtils.sendSuccess("Slot chợ đã trống! Giật mình tỉnh dậy bán tiếp...");
+                ChatUtils.sendSuccess(ChatUtils.lang("Slot chợ đã trống! Giật mình tỉnh dậy bán tiếp...", "An AH slot freed up! Resuming sales..."));
             }
         }
     }
@@ -1458,7 +1458,7 @@ public class SellTaskManager {
         if (mc.getNetworkHandler() != null) {
             mc.getNetworkHandler().sendCommand("sell");
         }
-        if (config.chatNotifications) ChatUtils.sendAction("Mở /sell để bán toàn bộ inventory...");
+        if (config.chatNotifications) ChatUtils.sendAction(ChatUtils.lang("Mở /sell để bán toàn bộ inventory...", "Opening /sell to sell the whole inventory..."));
         sellInvMoved = 0;
         sellInvIndex = 0;
         sellInvQueue.clear();
@@ -1470,8 +1470,8 @@ public class SellTaskManager {
         if (!(mc.currentScreen instanceof HandledScreen<?>)) {
             tickCounter++;
             if (tickCounter > config.guiTimeout) {
-                ChatUtils.sendError("Không mở được GUI /sell; dừng.");
-                DiscordWebhook.send(config, "SELLINV lỗi: không mở được GUI /sell.");
+                ChatUtils.sendError(ChatUtils.lang("Không mở được GUI /sell; dừng.", "Could not open the /sell GUI; stopping."));
+                DiscordWebhook.send(config, ChatUtils.lang("SELLINV lỗi: không mở được GUI /sell.", "SELLINV error: could not open /sell GUI."));
                 state = SellState.ERROR;
                 tickCounter = 0;
             }
@@ -1495,7 +1495,7 @@ public class SellTaskManager {
             }
             sellInvNextClickDelay = randomTicks(config.sellInvClickDelayMin, config.sellInvClickDelayMax);
             if (config.chatNotifications) {
-                ChatUtils.sendInfo("Đưa " + sellInvQueue.size() + " ô item vào /sell...");
+                ChatUtils.sendInfo(ChatUtils.lang("Đưa ", "Moving ") + sellInvQueue.size() + ChatUtils.lang(" ô item vào /sell...", " inventory slots into /sell..."));
             }
         }
 
@@ -1516,7 +1516,7 @@ public class SellTaskManager {
 
         if (sellInvIndex >= sellInvQueue.size()) {
             if (config.chatNotifications) {
-                ChatUtils.sendSuccess("Đã đưa hết " + sellInvMoved + " ô vào /sell; chờ xác nhận...");
+                ChatUtils.sendSuccess(ChatUtils.lang("Đã đưa hết ", "Moved all ") + sellInvMoved + ChatUtils.lang(" ô vào /sell; chờ xác nhận...", " slots into /sell; waiting to confirm..."));
             }
             state = SellState.SELLINV_CONFIRM;
             tickCounter = 0;
@@ -1555,8 +1555,8 @@ public class SellTaskManager {
         }
 
         if (confirmSlot == -1) {
-            ChatUtils.sendError("Không tìm thấy nút confirm trong GUI /sell; dừng.");
-            DiscordWebhook.send(config, "SELLINV lỗi: không tìm thấy nút confirm trong GUI /sell.");
+            ChatUtils.sendError(ChatUtils.lang("Không tìm thấy nút confirm trong GUI /sell; dừng.", "Could not find the confirm button in the /sell GUI; stopping."));
+            DiscordWebhook.send(config, ChatUtils.lang("SELLINV lỗi: không tìm thấy nút confirm trong GUI /sell.", "SELLINV error: no confirm button found in the /sell GUI."));
             state = SellState.ERROR;
             tickCounter = 0;
             return;
@@ -1564,7 +1564,7 @@ public class SellTaskManager {
 
         InventoryUtils.clickScreenSlot(confirmSlot);
         if (config.chatNotifications) {
-            ChatUtils.sendSuccess("✅ Đã bấm confirm /sell (slot " + confirmSlot + ")");
+            ChatUtils.sendSuccess(ChatUtils.lang("✅ Đã bấm confirm /sell (slot ", "✅ Clicked /sell confirm (slot ") + confirmSlot + ChatUtils.lang(")", ")"));
         }
         finishSellInv("Đã bán " + sellInvMoved + " ô qua /sell");
     }
@@ -1590,7 +1590,7 @@ public class SellTaskManager {
             for (int i = 0; i < 5; i++) {
                 mc.player.playSound(net.minecraft.sound.SoundEvents.BLOCK_ANVIL_LAND, 1.0f, 1.0f);
             }
-            ChatUtils.sendError("🚨 CẢNH BÁO: " + reason);
+            ChatUtils.sendError(ChatUtils.lang("🚨 CẢNH BÁO: ", "🚨 ALERT: ") + reason);
         }
     }
 }

@@ -9,6 +9,16 @@ import net.minecraft.text.Text;
  */
 public class ChatUtils {
     private static final String PREFIX = "§6[DonutSell]§r ";
+    private static String lang = "vi";
+
+    public static void setLang(String l) {
+        lang = "en".equalsIgnoreCase(l) ? "en" : "vi";
+    }
+
+    /** Bilingual helper: returns the English string when language is en, otherwise the Vietnamese one. */
+    public static String lang(String vi, String en) {
+        return "en".equals(lang) ? en : vi;
+    }
 
     public static void sendMessage(String message) {
         MinecraftClient client = MinecraftClient.getInstance();
