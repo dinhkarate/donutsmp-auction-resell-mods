@@ -63,7 +63,9 @@ public class SellTaskManager {
     private int inventoryCountBeforeCollect = 0;
     private int adjustDropCount = 0;
     private int retryCount = 0;
+    private int swapStallCount = 0;
     private static final int MAX_RETRIES = 3;
+    private static final int MAX_SWAP_ATTEMPTS = 12;
 
     private final DonutSellConfig config;
     private String lastWorldKey = null;
@@ -258,6 +260,7 @@ public class SellTaskManager {
         this.inventoryCountBeforeCollect = 0;
         this.adjustDropCount = 0;
         this.retryCount = 0;
+        this.swapStallCount = 0;
         this.lastWorldKey = mc.world.getRegistryKey().getValue().toString();
         this.sellsSinceLastBreak = 0;
         this.sellsTargetForBreak = 10 + (int) (Math.random() * 11);
@@ -496,6 +499,7 @@ public class SellTaskManager {
         }
 
         if (isHoldingCurrentTarget()) {
+            swapStallCount = 0;
             int mainHandCount = currentMainHandCount();
             if (mainHandCount == config.desiredQuantity) {
                 if (config.chatNotifications) {
@@ -533,8 +537,18 @@ public class SellTaskManager {
         } else {
             int slot = currentFindItemSlot();
             if (slot >= 0) {
+                swapStallCount++;
+                if (swapStallCount > MAX_SWAP_ATTEMPTS) {
+                    ChatUtils.sendError("Không đưa được item lên tay sau " + swapStallCount
+                            + " lần thử; dừng (server từ chối swap click).");
+                    DiscordWebhook.send(config, "Dừng: không đưa được item lên tay (server từ chối click).");
+                    state = SellState.ERROR;
+                    tickCounter = 0;
+                    return;
+                }
                 if (config.chatNotifications) {
-                    ChatUtils.sendAction("Chuyển item từ slot " + slot + " lên tay...");
+                    ChatUtils.sendAction("Chuyển item từ slot " + slot + " lên tay... (lần "
+                            + swapStallCount + "/" + MAX_SWAP_ATTEMPTS + ")");
                 }
                 InventoryUtils.swapToMainHand(slot);
                 state = SellState.SWITCHING_HOTBAR;
@@ -543,6 +557,7 @@ public class SellTaskManager {
                 retryCount++;
                 if (retryCount > MAX_RETRIES) {
                     ChatUtils.sendError("Lỗi: Không thể tìm item sau " + MAX_RETRIES + " lần thử!");
+                    DiscordWebhook.send(config, "Lỗi: không tìm thấy item trong inventory.");
                     state = SellState.ERROR;
                 }
             }
@@ -792,10 +807,10 @@ public class SellTaskManager {
 
         if (tickCounter > config.guiTimeout) {
             if (config.chatNotifications)
-                ChatUtils.sendWarning("Timeout chờ GUI! Chuyển sang item tiếp theo...");
+                ChatUtils.sendWarning("Timeout chờ GUI xác nhận; chưa tính lần bán này.");
+            DiscordWebhook.send(config, "Timeout chờ GUI /ah sell; chưa xác nhận lần list.");
             state = SellState.COOLDOWN;
             tickCounter = 0;
-            itemsSold++;
             return;
         }
 
@@ -1246,6 +1261,17 @@ public class SellTaskManager {
     /** 
      * Được gọi khi bắt được chat báo có người mua hoặc đồ hết hạn 
      */
+    public void onListed() {
+        if (state == SellState.WAITING_FOR_GUI) {
+            itemsSold++;
+            grossListedValue += price;
+            DiscordWebhook.send(config, financialSummary("Server xác nhận đã list | giá=" + price));
+            if (config.chatNotifications) ChatUtils.sendSuccess("✅ Server xác nhận: đã list giá " + price);
+            state = SellState.COOLDOWN;
+            tickCounter = 0;
+        }
+    }
+
     public void triggerItemSold(String message) {
         Integer salePrice = parseMoneyFromText(message);
         Matcher quantityMatcher = SOLD_QUANTITY_PATTERN.matcher(message == null ? "" : message);

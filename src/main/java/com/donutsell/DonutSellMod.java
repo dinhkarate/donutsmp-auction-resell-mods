@@ -138,6 +138,11 @@ public class DonutSellMod implements ClientModInitializer {
             if (overlay) return;
 
             String plainText = message.getString().toLowerCase();
+            boolean isListed = plainText.contains("you listed");
+            if (isListed) {
+                taskManager.onListed();
+            }
+
             boolean isItemSold = plainText.contains("bought your")
                     || plainText.contains("đã mua")
                     || plainText.contains("purchased");
