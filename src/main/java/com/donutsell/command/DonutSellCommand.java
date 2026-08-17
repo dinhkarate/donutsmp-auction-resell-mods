@@ -123,6 +123,42 @@ public class DonutSellCommand {
                         })
                     )
 
+                    // /asell sellclick <min> <max>
+                    .then(ClientCommandManager.literal("sellclick")
+                        .then(ClientCommandManager.argument("min", IntegerArgumentType.integer(1, 600))
+                            .then(ClientCommandManager.argument("max", IntegerArgumentType.integer(1, 600))
+                                .executes(ctx -> {
+                                    int min = IntegerArgumentType.getInteger(ctx, "min");
+                                    int max = IntegerArgumentType.getInteger(ctx, "max");
+                                    if (min > max) { int t = min; min = max; max = t; }
+                                    config.sellInvClickDelayMin = min;
+                                    config.sellInvClickDelayMax = max;
+                                    config.save();
+                                    ChatUtils.sendSuccess("Sell click delay: §f" + min + "–" + max + " tick");
+                                    return 1;
+                                })
+                            )
+                        )
+                    )
+
+                    // /asell sellconfirm <min> <max>
+                    .then(ClientCommandManager.literal("sellconfirm")
+                        .then(ClientCommandManager.argument("min", IntegerArgumentType.integer(1, 600))
+                            .then(ClientCommandManager.argument("max", IntegerArgumentType.integer(1, 600))
+                                .executes(ctx -> {
+                                    int min = IntegerArgumentType.getInteger(ctx, "min");
+                                    int max = IntegerArgumentType.getInteger(ctx, "max");
+                                    if (min > max) { int t = min; min = max; max = t; }
+                                    config.sellInvConfirmDelayMin = min;
+                                    config.sellInvConfirmDelayMax = max;
+                                    config.save();
+                                    ChatUtils.sendSuccess("Sell confirm delay: §f" + min + "–" + max + " tick");
+                                    return 1;
+                                })
+                            )
+                        )
+                    )
+
                     // /asell sellinv
                     .then(ClientCommandManager.literal("sellinv")
                         .executes(ctx -> {
@@ -329,6 +365,8 @@ public class DonutSellCommand {
         ChatUtils.sendInfo("§f/asell <giá>          §7Bán với giá tùy chỉnh");
         ChatUtils.sendInfo("§f/asell                §7Bán với giá mặc định");
         ChatUtils.sendInfo("§f/asell sellinv        §7Mở /sell, đẩy hết inventory vào rồi bấm confirm");
+        ChatUtils.sendInfo("§f/asell sellclick <min> <max>  §7Delay giữa các lần đẩy item vào /sell");
+        ChatUtils.sendInfo("§f/asell sellconfirm <min> <max> §7Delay trước khi bấm confirm");
         ChatUtils.sendInfo("§f/asell stop           §7Dừng tác vụ");
         ChatUtils.sendInfo("§f/asell status         §7Xem trạng thái");
         ChatUtils.sendInfo("§f/asell reload         §7Tải lại config");
