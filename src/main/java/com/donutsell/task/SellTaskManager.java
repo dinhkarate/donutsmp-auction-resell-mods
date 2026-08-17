@@ -102,6 +102,7 @@ public class SellTaskManager {
     private boolean smartScanOwn = true;
     private int ownLowestPrice = Integer.MAX_VALUE;
     private int marketLowestPrice = Integer.MAX_VALUE;
+    private long runStartMillis = 0;
 
     private int randomizeDelay(int baseDelay) {
         if (baseDelay <= 5) return baseDelay;
@@ -263,13 +264,15 @@ public class SellTaskManager {
         this.adjustDropCount = 0;
         this.retryCount = 0;
         this.swapStallCount = 0;
+        this.runStartMillis = System.currentTimeMillis();
         this.smartPagesScanned = 0;
         this.smartScanOwn = config.useOwnPriceCheck;
         this.ownLowestPrice = Integer.MAX_VALUE;
         this.marketLowestPrice = Integer.MAX_VALUE;
         this.lastWorldKey = mc.world.getRegistryKey().getValue().toString();
         this.sellsSinceLastBreak = 0;
-        this.sellsTargetForBreak = 10 + (int) (Math.random() * 11);
+        this.sellsTargetForBreak = config.breakAfterSalesMin + (int) (Math.random()
+                * (Math.max(1, config.breakAfterSalesMax - config.breakAfterSalesMin) + 1));
         this.itemPickupProtectionDelay = 0;
         this.isOnBreak = false;
         this.breakTicksRemaining = 0;
@@ -383,6 +386,17 @@ public class SellTaskManager {
 
     public void tick() {
         if (!isRunning()) return;
+
+        if (config.maxRunMinutes > 0
+                && System.currentTimeMillis() - runStartMillis > config.maxRunMinutes * 60_000L) {
+            if (config.chatNotifications) {
+                ChatUtils.sendWarning("Đã chạy " + config.maxRunMinutes + " phút (maxRunMinutes); tự dừng.");
+            }
+            DiscordWebhook.send(config, "Tự dừng sau " + config.maxRunMinutes + " phút (maxRunMinutes).");
+            state = SellState.FINISHED;
+            tickCounter = 0;
+            return;
+        }
 
         MinecraftClient mc = MinecraftClient.getInstance();
 
@@ -674,8 +688,11 @@ public class SellTaskManager {
         if (!(mc.currentScreen instanceof HandledScreen<?>)) {
             if (tickCounter == 0) {
                 smartPagesScanned = 0;
-                if (smartScanOwn) ownLowestPrice = Integer.MAX_VALUE;
+                boolean doOwn = config.useOwnPriceCheck && smartScanOwn
+                        && Math.random() < config.ownPriceCheckChance;
+                if (doOwn) ownLowestPrice = Integer.MAX_VALUE;
                 else marketLowestPrice = Integer.MAX_VALUE;
+                if (!doOwn && smartScanOwn) smartScanOwn = false; // skip own scan this cycle
                 if (mc.getNetworkHandler() != null) {
                     mc.getNetworkHandler().sendCommand(smartScanCommand());
                 }
@@ -999,8 +1016,10 @@ public class SellTaskManager {
             sellsSinceLastBreak++;
             if (sellsSinceLastBreak >= sellsTargetForBreak) {
                 sellsSinceLastBreak = 0;
-                sellsTargetForBreak = 10 + (int) (Math.random() * 11);
-                breakTicksRemaining = 100 + (int) (Math.random() * 101); // 5–10 seconds
+                sellsTargetForBreak = config.breakAfterSalesMin + (int) (Math.random()
+                        * (Math.max(1, config.breakAfterSalesMax - config.breakAfterSalesMin) + 1));
+                breakTicksRemaining = (config.breakSecondsMin + (int) (Math.random()
+                        * (Math.max(1, config.breakSecondsMax - config.breakSecondsMin) + 1))) * 20;
                 isOnBreak = true;
                 ChatUtils.sendWarning("☕ Nghỉ giải lao "
                         + String.format("%.1f", breakTicksRemaining / 20.0) + "s...");

@@ -224,7 +224,7 @@ public class DonutSellCommand {
 
                     // /asell delay <ticks>
                     .then(ClientCommandManager.literal("delay")
-                        .then(ClientCommandManager.argument("ticks", IntegerArgumentType.integer(5, 200))
+                        .then(ClientCommandManager.argument("ticks", IntegerArgumentType.integer(5, 600))
                             .executes(ctx -> {
                                 int ticks = IntegerArgumentType.getInteger(ctx, "ticks");
                                 config.itemDelay = ticks;

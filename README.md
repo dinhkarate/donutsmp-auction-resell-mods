@@ -188,6 +188,13 @@ Use it responsibly: automation may still violate your server's rules.
   "reconnectDelaySeconds": 10,
   "maxReconnectAttempts": 6,
   "autoResumeSell": true,
+  "maxRunMinutes": 0,
+  "itemDelay": 30,
+  "breakAfterSalesMin": 10,
+  "breakAfterSalesMax": 20,
+  "breakSecondsMin": 5,
+  "breakSecondsMax": 10,
+  "ownPriceCheckChance": 1.0,
   "discordWebhookEnabled": false,
   "discordWebhookUrl": ""
 }
@@ -200,6 +207,11 @@ Use it responsibly: automation may still violate your server's rules.
 | `acquisitionCostPerItem` | Buy cost per item from `/order` for profit math | `0` |
 | `autoOrder` | Auto-collect from `/order` when out of stock | `true` |
 | `autoReconnect` | Auto-rejoin after a disconnect | `true` |
+| `maxRunMinutes` | Auto-stop after N minutes (0 = unlimited) — avoid 24/7 uptime | `0` |
+| `itemDelay` | Ticks between sales (`/asell delay`, 5–600) — raise for a slower cadence | `30` |
+| `breakAfterSalesMin/Max` | Sales before a human-like break | `10/20` |
+| `breakSecondsMin/Max` | Break length in seconds | `5/10` |
+| `ownPriceCheckChance` | Chance to run the own-listing scan (lower = less regular pattern) | `1.0` |
 | `discordWebhookUrl` | **Never commit this** — paste your private URL locally | `""` |
 
 ---
@@ -263,6 +275,13 @@ The generic workflow captures your held item as the template and matches item + 
 No. It reads Minecraft's internal `ItemStack`, enchantment and GUI slot data directly — no screenshots or OCR are involved.
 
 ---
+
+## Known risks & limitations
+
+Automation may violate server rules and **can get your account banned**. Use a
+separate account, avoid 24/7 uptime, and read the full list in
+**[KNOWN.md](KNOWN.md)** — it covers detection surface, the "Invalid session"
+kicks, and the recommended anti-flag settings.
 
 ## Maintenance & freshness
 

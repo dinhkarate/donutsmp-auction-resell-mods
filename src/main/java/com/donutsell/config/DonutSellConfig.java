@@ -65,6 +65,18 @@ public class DonutSellConfig {
     /** Before pricing, check own lowest listing (e.g. /ah <player> <item>) and keep the price when already cheapest. */
     public boolean useOwnPriceCheck = true;
 
+    /** Chance (0-1) to run the own-listing scan; lower = less regular bot pattern. */
+    public double ownPriceCheckChance = 1.0;
+
+    /** Auto-stop after this many minutes (0 = unlimited). */
+    public int maxRunMinutes = 0;
+
+    /** Break simulator: sales range before a break, and break duration in seconds. */
+    public int breakAfterSalesMin = 10;
+    public int breakAfterSalesMax = 20;
+    public int breakSecondsMin = 5;
+    public int breakSecondsMax = 10;
+
     /** Lowest accepted market price for smart pricing. */
     public int minimumMarketPrice = 400000;
 
@@ -180,6 +192,12 @@ public class DonutSellConfig {
         this.maxReconnectAttempts = other.maxReconnectAttempts;
         this.autoResumeSell = other.autoResumeSell;
         this.useOwnPriceCheck = other.useOwnPriceCheck;
+        this.ownPriceCheckChance = other.ownPriceCheckChance;
+        this.maxRunMinutes = other.maxRunMinutes;
+        this.breakAfterSalesMin = other.breakAfterSalesMin;
+        this.breakAfterSalesMax = other.breakAfterSalesMax;
+        this.breakSecondsMin = other.breakSecondsMin;
+        this.breakSecondsMax = other.breakSecondsMax;
         this.minimumMarketPrice = other.minimumMarketPrice;
         this.maximumMarketPrice = other.maximumMarketPrice;
         this.acquisitionCostPerItem = other.acquisitionCostPerItem;
