@@ -224,6 +224,12 @@ public class SellTaskManager {
         }
     }
 
+    public void startPlain(int sellPrice) {
+        lastWorkflowMode = "plain";
+        lastWorkflowPrice = sellPrice;
+        start(sellPrice);
+    }
+
     public void start(int sellPrice) {
         if (isRunning()) {
             ChatUtils.sendWarning("Đang chạy! Dùng /asell stop để dừng trước.");
@@ -289,8 +295,6 @@ public class SellTaskManager {
         }
         ChatUtils.sendInfo("Dùng §f/asell stop §7để dừng.");
 
-        lastWorkflowMode = "plain";
-        lastWorkflowPrice = sellPrice;
         state = SellState.PREPARING_ITEM;
     }
 
@@ -625,21 +629,28 @@ public class SellTaskManager {
         if (mc.player == null || mc.player.currentScreenHandler == null) return;
 
         int containerSize = mc.player.currentScreenHandler.slots.size() - 36;
+        int scannedSlots = 0;
+        int matchedSlots = 0;
+        int pricedSlots = 0;
         boolean sawMatchingListing = false;
         for (int i = 0; i < containerSize; i++) {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
             if (slot == null || !slot.hasStack()) continue;
             ItemStack stack = slot.getStack();
+            scannedSlots++;
             boolean targetMatch = isHeldWorkflow()
-                    ? InventoryUtils.isSimilarStack(stack, heldItemTemplate)
+                    ? InventoryUtils.isSameItemAndEnchants(stack, heldItemTemplate)
                     : InventoryUtils.isTargetStack(stack, config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel);
             if (!targetMatch) continue;
+            matchedSlots++;
             Integer listingPrice = parseListingPrice(stack);
             if (listingPrice == null) continue;
+            pricedSlots++;
             sawMatchingListing = true;
-            if (listingPrice >= config.minimumMarketPrice
-                    && listingPrice <= config.maximumMarketPrice) {
+            if (isHeldWorkflow()
+                    || (listingPrice >= config.minimumMarketPrice
+                    && listingPrice <= config.maximumMarketPrice)) {
                 lowestMarketPrice = Math.min(lowestMarketPrice, listingPrice);
             }
         }
@@ -670,14 +681,14 @@ public class SellTaskManager {
         }
 
         mc.player.closeHandledScreen();
+        String scanDebug = "Scan slots=" + scannedSlots + " matched=" + matchedSlots + " priced=" + pricedSlots;
         if (config.chatNotifications) {
-            ChatUtils.sendWarning(sawMatchingListing
-                    ? "Không có listing Sharpness V trong khoảng 400k–500k; dừng."
-                    : "Không tìm thấy Diamond Axe Sharpness V trên AH; dừng.");
+            ChatUtils.sendWarning(scanDebug + (sawMatchingListing
+                    ? " | có listing khớp nhưng không có giá dùng được; dừng."
+                    : " | không khớp item nào trên AH; dừng."));
         }
-        DiscordWebhook.send(config, sawMatchingListing
-                ? "ASell dừng: không có listing Sharpness V trong khoảng giá cấu hình."
-                : "ASell dừng: không tìm thấy Diamond Axe Sharpness V trên AH.");
+        System.out.println("[ASell] " + scanDebug);
+        DiscordWebhook.send(config, "ASell dừng: " + scanDebug);
         state = SellState.FINISHED;
         tickCounter = 0;
     }
@@ -707,11 +718,21 @@ public class SellTaskManager {
     }
 
     private Integer parseListingPrice(ItemStack stack) {
+        java.util.List<String> lines = new java.util.ArrayList<>();
+        lines.add(stack.getName().getString());
         for (net.minecraft.text.Text line : InventoryUtils.getItemLore(stack)) {
-            String text = line.getString().replace("\\u00a0", " ").toLowerCase(Locale.ROOT);
-            if (!text.contains("$") && !text.contains("price") && !text.contains("cost")
-                    && !text.contains("giá") && !text.contains("for")) continue;
-            Integer value = parseMoneyFromText(text);
+            lines.add(line.getString());
+        }
+        for (String text : lines) {
+            text = text.replace("\\u00a0", " ").trim().toLowerCase(Locale.ROOT);
+            if (text.isEmpty()) continue;
+            boolean hasMarker = text.contains("$") || text.contains("price")
+                    || text.contains("cost") || text.contains("for")
+                    || text.contains("giá") || text.contains("buy");
+            Integer value = hasMarker ? parseMoneyFromText(text) : null;
+            if (value == null && text.matches("\\$?[0-9][0-9,]*(?:\\.[0-9]+)?\\s*[kmb]?")) {
+                value = parseMoneyFromText("$" + text.replaceFirst("^\\$", ""));
+            }
             if (value != null) return value;
         }
         return null;
@@ -1003,7 +1024,7 @@ public class SellTaskManager {
             ItemStack orderStack = slot.getStack();
             String itemId = InventoryUtils.getItemId(orderStack);
             boolean exactTarget = isHeldWorkflow()
-                    ? InventoryUtils.isSimilarStack(orderStack, heldItemTemplate)
+                    ? InventoryUtils.isSameItemAndEnchants(orderStack, heldItemTemplate)
                     : InventoryUtils.isTargetStack(orderStack, config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel);
             boolean loreTarget = orderStack.getName().getString().toLowerCase(Locale.ROOT).contains("diamond axe")
@@ -1141,7 +1162,7 @@ public class SellTaskManager {
             net.minecraft.screen.slot.Slot slot = mc.player.currentScreenHandler.getSlot(i);
 
             if (slot != null && slot.hasStack()
-                    && (isHeldWorkflow() ? InventoryUtils.isSimilarStack(slot.getStack(), heldItemTemplate)
+                    && (isHeldWorkflow() ? InventoryUtils.isSameItemAndEnchants(slot.getStack(), heldItemTemplate)
                     : InventoryUtils.isTargetStack(slot.getStack(), config.targetItem,
                     config.targetEnchantment, config.targetEnchantmentLevel))) {
                 if (config.chatNotifications) {

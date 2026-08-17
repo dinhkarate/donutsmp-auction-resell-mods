@@ -44,7 +44,7 @@ public class KeybindHandler {
             if (taskManager.isRunning()) {
                 taskManager.stop();
             } else {
-                taskManager.start(config.defaultPrice);
+                taskManager.startPlain(config.defaultPrice);
             }
         }
     }

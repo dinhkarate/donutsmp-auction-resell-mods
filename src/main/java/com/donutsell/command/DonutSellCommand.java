@@ -295,14 +295,14 @@ public class DonutSellCommand {
                     .then(ClientCommandManager.argument("price", IntegerArgumentType.integer(1))
                         .executes(ctx -> {
                             int sellPrice = IntegerArgumentType.getInteger(ctx, "price");
-                            taskManager.start(sellPrice);
+                            taskManager.startPlain(sellPrice);
                             return 1;
                         })
                     )
 
                     // /asell (no args - dùng giá mặc định)
                     .executes(ctx -> {
-                        taskManager.start(config.defaultPrice);
+                        taskManager.startPlain(config.defaultPrice);
                         return 1;
                     })
             );

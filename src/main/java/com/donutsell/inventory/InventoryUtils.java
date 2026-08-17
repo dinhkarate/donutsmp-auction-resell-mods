@@ -66,6 +66,22 @@ public class InventoryUtils {
     }
 
     /**
+     * Lenient identity match used for Auction House and order listings: same item type
+     * and every enchantment of the template present at the same level. Custom name,
+     * lore, count, damage and plugin-added components are ignored, because the server
+     * adds price/seller lines to listed items.
+     */
+    public static boolean isSameItemAndEnchants(ItemStack a, ItemStack b) {
+        if (a == null || b == null || a.isEmpty() || b.isEmpty()) return false;
+        if (!getItemId(a).equals(getItemId(b))) return false;
+        net.minecraft.component.type.ItemEnchantmentsComponent enchB = b.getEnchantments();
+        for (var entry : a.getEnchantments().getEnchantmentEntries()) {
+            if (enchB.getLevel(entry.getKey()) != entry.getIntValue()) return false;
+        }
+        return true;
+    }
+
+    /**
      * Compare identity: same item, same custom name (when set), same enchantments at the
      * same levels. Lore, damage, count and plugin-added components (e.g. AH price/seller
      * lines) are ignored so listings and order slots match the held item.
@@ -141,7 +157,7 @@ public class InventoryUtils {
         if (mc.player == null || template == null || template.isEmpty()) return 0;
         int count = 0;
         for (ItemStack stack : mc.player.getInventory().main) {
-            if (isSimilarStack(stack, template)) count += stack.getCount();
+            if (isSameItemAndEnchants(stack, template)) count += stack.getCount();
         }
         return count;
     }
@@ -173,7 +189,7 @@ public class InventoryUtils {
         if (mc.player == null || template == null || template.isEmpty()) return -1;
         int selectedSlot = mc.player.getInventory().selectedSlot;
         for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
-            if (i != selectedSlot && isSimilarStack(mc.player.getInventory().main.get(i), template)) return i;
+            if (i != selectedSlot && isSameItemAndEnchants(mc.player.getInventory().main.get(i), template)) return i;
         }
         return -1;
     }
@@ -205,11 +221,11 @@ public class InventoryUtils {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || template == null || template.isEmpty()) return -1;
         for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
-            if (i != excludeSlot && isSimilarStack(mc.player.getInventory().main.get(i), template)
+            if (i != excludeSlot && isSameItemAndEnchants(mc.player.getInventory().main.get(i), template)
                     && mc.player.getInventory().main.get(i).getCount() == minCount) return i;
         }
         for (int i = 0; i < mc.player.getInventory().main.size(); i++) {
-            if (i != excludeSlot && isSimilarStack(mc.player.getInventory().main.get(i), template)
+            if (i != excludeSlot && isSameItemAndEnchants(mc.player.getInventory().main.get(i), template)
                     && mc.player.getInventory().main.get(i).getCount() >= minCount) return i;
         }
         return -1;
