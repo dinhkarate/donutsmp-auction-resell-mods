@@ -1,0 +1,17 @@
+# Minecraft Auction House Auto-Resell & Undercut Bot (Fabric 1.21.1)
+> A Fabric client-side mod for Minecraft 1.21.1 that automatically resells items on the DonutSMP Auction House. Scans your own listings and the live market, undercuts competitors only when needed, refills stock from orders, tracks profit, and sends Discord webhook reports — AFK-safe money making without crashing the market.
+
+## Main sections
+- [README](https://github.com/dinhkarate/donutsmp-auction-resell-mods): Full documentation — features, anti price-crash pricing logic, held-item resell workflow, auto-order refill, profit tracking, Discord webhook, anti-detection, commands, config, build instructions, FAQ, credits.
+- [License (MIT)](LICENSE): MIT license for the project.
+
+## Key facts
+- Minecraft 1.21.1, Fabric Loader 0.16+, Fabric API, Java 21+.
+- Two-phase price check: reads `/ah <player> <item>` (own lowest) then `/ah <item>` (market lowest); keeps the own price when already cheapest, undercuts competitors by a configurable amount (default 1000) otherwise.
+- Generic held-item workflow: `/asell asell 1k diamond axe sharpness 5` or shorthand `/asell 1k <search>`.
+- Auto-order refill via `/order` -> Your Orders -> Collect.
+- Profit tracker: collected/listed/sold counts, gross listed value, realized revenue, projected/realized profit.
+- Discord webhook notifications with HTTPS validation (discord.com / discordapp.com only).
+- Auto-reconnect: 10s delay, 6 attempts, resumes the last selling workflow.
+- No OCR, no screenshots, no mixins.
+- Heavily extended fork of the original ASell mod by nguyenttuca (MIT).

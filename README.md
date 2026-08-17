@@ -1,289 +1,264 @@
-# Fabric Auction House Auto-Sell Mod
+# Minecraft Auction House Auto-Resell & Undercut Bot (Fabric 1.21.1)
 
 <div align="center">
 
 ![Minecraft](https://img.shields.io/badge/Minecraft-1.21.1-green?style=for-the-badge&logo=minecraft)
-![Fabric](https://img.shields.io/badge/Fabric-0.100+-blue?style=for-the-badge)
+![Fabric](https://img.shields.io/badge/Fabric-API-blue?style=for-the-badge)
 ![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
-
-**Tự động bán hàng trên Auction House — nhanh, an toàn, chống ban**
+![Last Updated](https://img.shields.io/badge/Last%20Updated-2026--08--17-blue?style=for-the-badge)
 
 </div>
 
----
+## TL;DR
 
-## ✨ Tính năng nổi bật
-
-| Tính năng | Mô tả |
-|-----------|-------|
-| 🤖 **Auto-sell** | Tự động gửi `/ah sell <price>`, click xác nhận GUI, lặp liên tục |
-| 🎲 **Randomized delay** | Thời gian chờ ngẫu nhiên ±50% mỗi lần bán để chống phát hiện bot |
-| ☕ **Break Simulator** | Tự động nghỉ 5–10 giây sau mỗi 10–20 lần bán, giả lập hành vi người chơi |
-| 📦 **Auto-Order** | Khi hết hàng, tự động gửi `/order` và lấy đồ từ GUI |
-| 🛡️ **Staff Chat Monitor** | Tự dừng ngay khi phát hiện tin nhắn riêng/nghi ngờ từ admin |
-| 🔍 **Auto-detect GUI** | Tự tìm nút xác nhận (kính xanh lá) trong GUI, không cần cài slot thủ công |
-| ⚙️ **JSON Config** | Mọi cài đặt lưu vào file `.minecraft/config/asell.json` |
-| ⌨️ **Keybind toggle** | Bật/tắt mod bằng phím tắt (mặc định: không đặt) |
-| 🌐 **Background** | Hoạt động khi alt-tab (tắt "Pause on Lost Focus" trong Minecraft) |
+A Fabric client-side mod for Minecraft 1.21.1 that automatically resells items on the DonutSMP Auction House. It scans your own listings and the live market, undercuts competitors only when needed, refills stock from your orders, tracks profit, and sends Discord reports — so you can flip items and earn money while AFK without crashing the market.
 
 ---
 
-## 🛠️ Công nghệ sử dụng
+## What is this mod?
 
-- **[Fabric API](https://fabricmc.net/)** — Framework mod client-side cho Minecraft
-- **[Fabric Loader](https://fabricmc.net/use/loader/)** — Loader để khởi động mod
-- **[Brigadier](https://github.com/Mojang/brigadier)** — Thư viện parse lệnh của Mojang (đăng ký `/asell`)
-- **[Gson](https://github.com/google/gson)** — Đọc/ghi file config JSON
-- **Java 21** — Ngôn ngữ lập trình chính
-- **Gradle + Fabric Loom** — Build system
+**ASell (donutsmp-auction-resell-mods)** is a client-side Fabric mod for Minecraft 1.21.1 that turns Auction House flipping into a fully automatic, AFK-safe money-making workflow. It is a heavily extended fork of the original ASell auto-seller by nguyenttuca.
 
-### Kiến trúc
+The mod reads the actual Minecraft `ItemStack`, enchantment, lore and GUI slot data directly — **no OCR, no screenshots, no game-code hooks (no mixins)**. It sends the same commands and clicks a real player would, which makes it lightweight and hard to detect as a bot. Every delay is randomized, the bot takes human-like breaks, and it stops instantly if staff whisper you or if the world changes.
 
-```
-com.donutsell/
-├── DonutSellMod.java          # Entry point, đăng ký event listeners
-├── command/
-│   └── DonutSellCommand.java  # Xử lý lệnh /asell
-├── config/
-│   └── DonutSellConfig.java   # Load/save config JSON
-├── inventory/
-│   └── InventoryUtils.java    # Tìm, đếm, swap item trong inventory
-├── keybind/
-│   └── KeybindHandler.java    # Xử lý phím tắt
-├── task/
-│   ├── SellState.java         # Enum các trạng thái state machine
-│   └── SellTaskManager.java   # Core logic: state machine điều khiển toàn bộ
-└── util/
-    └── ChatUtils.java         # Gửi message màu sắc vào chat
-```
-
-**State Machine:**
-```
-IDLE → PREPARING_ITEM → SENDING_COMMAND → WAITING_FOR_GUI → CLICKING_CONFIRM → COOLDOWN → (loop)
-                      ↘ ADJUSTING_QUANTITY ↗
-                      ↘ SWITCHING_HOTBAR  ↗
-                      ↘ FETCHING_ORDER → WAITING_ORDER_GUI → COLLECTING_ORDER_ITEMS ↗
-```
+In plain terms: hold an enchanted item such as a **Diamond Axe Sharpness V**, run one command, and the bot will scan the Auction House, choose the smartest price, list the item, collect fresh stock from your orders, and repeat — all while reporting your profit to Discord.
 
 ---
 
-## 📦 Cài đặt
+## Feature matrix
 
-### Yêu cầu
-
-- Minecraft **1.21.1**
-- [Fabric Loader](https://fabricmc.net/use/installer/) ≥ 0.16
-- [Fabric API](https://modrinth.com/mod/fabric-api)
-
-### Hướng dẫn cài
-
-1. Tải file `.jar` từ [Releases](https://github.com/nguyenttuca/DonutSMP-Auto-Seller-Mod/releases/tag/v1.0.0)
-2. Copy vào thư mục `.minecraft/mods/`
-3. Khởi động Minecraft với Fabric profile
-4. Vào game và dùng `/asell help`
-
-[Video Hướng Dẫn Chi Tiết](https://www.youtube.com/watch?v=hk0OvS75VD4)
+| Feature | What it does |
+|---------|--------------|
+| 🤖 Auto-resell / auto-list | Sends `/ah sell <price>` and loops until stock runs out |
+| 🧠 Anti price-crash pricing | Scans your own listings first, keeps your price if you are already cheapest |
+| 🎯 Held-item resell workflow | Resell any enchanted item you hold (e.g. Diamond Axe Sharpness V) |
+| 📦 Auto-order refill | Collects completed `/order` stock when inventory runs out |
+| 💰 Profit tracker | Collected / listed / sold counts, gross value, revenue, projected & realized profit |
+| 🔌 Discord webhook | Live reports for every list, sale, error and reconnect |
+| 🔁 Auto-reconnect | Rejoins the server after a disconnect and resumes the last workflow |
+| 🛡️ Anti-detection | Randomized delays, break simulator, staff monitor, no mixins |
+| ⚙️ JSON config | All settings in `config/asell.json` |
 
 ---
 
-## 🎮 Hướng dẫn sử dụng
+## How does the anti price-crash logic work?
 
-### Bước đầu: Thiết lập item
+The biggest problem with naive resell bots is a **price-underselling spiral**: every bot undercuts the previous listing by 1k until the item is worthless. ASell prevents this with a two-phase price check before every listing.
 
-```
-/asell item lever        → Đặt item cần bán là minecraft:lever
-/asell item chest        → Đặt item cần bán là minecraft:chest
-/asell item oak_log      → Đặt item cần bán là minecraft:oak_log
-/asell quantity 1        → Mỗi lần bán 1 cái
-/asell delay 30          → Delay 30 tick (1.5 giây) giữa các lần bán
-```
+1. The bot opens `/ah <your player name> <item>` and reads the **lowest price of your own listings**.
+2. It opens `/ah <item>` and reads the **lowest market price**.
+3. If your own listing is **already the cheapest or equal** to the market lowest, the bot lists at **that same price** — no drop.
+4. Only when a **competitor** is cheaper than you does the bot undercut by the configured amount (default `1,000`).
 
-> **Lưu ý:** Không cần nhập `minecraft:` — mod tự thêm prefix.
-
-### Bắt đầu bán
-
-```bash
-/asell 5000                    # Bán với giá 5000
-/asell                         # Bán với giá mặc định (config)
-/asell asell 1k                # Cầm item mẫu, undercut AH 1k, tự fill /order
-/asell asell 1k diamond axe sharpness 5   # Chỉ định tên quét AH rồi undercut 1k
-/asell 1k                       # Alias ngắn của lệnh trên
-/asell 1k diamond axe sharpness 5         # Alias ngắn kèm tên quét AH
-/asell cost 300k                # Cost mua mỗi item từ /order để tính profit
-/asell axesharp5 450k           # List Sharpness V, tự collect /order khi hết hàng
-/asell sharpness5axe            # Quét AH, undercut 1,000, tự collect /order
-/asell report                   # Gửi financial report lên Discord
-/asell stop                    # Dừng
-/asell status                  # Xem trạng thái
-```
-
-### Danh sách lệnh đầy đủ
-
-| Lệnh | Mô tả |
-|------|-------|
-| `/asell <giá>` | Bắt đầu bán với giá chỉ định |
-| `/asell` | Bán với giá mặc định trong config |
-| `/asell stop` | Dừng tác vụ ngay lập tức |
-| `/asell status` | Xem trạng thái, số lần đã bán, item còn lại |
-| `/asell reload` | Tải lại file config (không cần khởi động lại) |
-| `/asell item <tên>` | Đặt item cần bán (không cần `minecraft:`) |
-| `/asell quantity <n>` | Số lượng item mỗi lần bán (1–64) |
-| `/asell delay <ticks>` | Delay giữa các lần bán (5–200 tick) |
-| `/asell slot <n>` | Slot GUI xác nhận (fallback nếu auto-detect lỗi) |
-| `/asell autoorder on\|off` | Bật/tắt tự lấy đồ từ `/order` khi hết hàng |
-| `/asell ordercmd <cmd>` | Đặt lệnh order tùy chỉnh (mặc định: `order`) |
-| `/asell help` | Hiển thị trợ giúp trong game |
+The result is stable pricing: you only ever lose 1k to a real competitor, never to yourself. The player name is detected automatically from the current session, with `NotVaib` as fallback. This logic can be disabled with `useOwnPriceCheck: false`.
 
 ---
 
-## ⚙️ File Config
+## How do I resell any enchanted item automatically?
 
-Config lưu tại: `.minecraft/config/asell.json`
+1. Hold the item you want to flip (e.g. a **Diamond Axe with Sharpness V**).
+2. Run the generic command with your undercut amount and the AH search text:
+
+```text
+/asell asell 1k diamond axe sharpness 5
+```
+
+Or the shorthand form:
+
+```text
+/asell 1k diamond axe sharpness 5
+```
+
+3. The bot captures your held item as an exact template (item + enchantments + lore), scans the AH for matching listings, applies the anti-crash pricing above, and starts listing.
+4. When your inventory runs out, it automatically opens `/order`, finds the completed order, collects the items and keeps selling.
+
+The undercut amount accepts any value — `1k`, `2k`, `6k`, `1.5k`, `1m` — and the search text is sent verbatim to the AH (e.g. `diamond axe sharpness 5`, `diamond pickaxe efficiency 5`, `enchanted golden apple`).
+
+---
+
+## How does auto-refill from orders work?
+
+When `autoOrder` is enabled (default `true`) and the bot cannot find any more target items in the inventory, it runs a 5-step order flow:
+
+1. Sends `/order` and waits for the order GUI.
+2. Clicks **Your Orders**.
+3. Selects the order matching the target item.
+4. Clicks **Collect**.
+5. Shift-clicks one collected stack back into the inventory and resumes selling.
+
+Order items are matched by item type so delivered stock is sellable immediately. Each collect is counted in the profit report as `Collected`.
+
+---
+
+## What does the profit tracker report?
+
+Set your acquisition cost once per session, then read live numbers in-game or on Discord:
+
+```text
+/asell cost 300k        # your buy cost per item from /order
+/asell status           # live counts in chat
+/asell report           # send the full financial report to Discord
+```
+
+The report contains:
+
+```text
+Collected: 24 | Listed: 22 | Sold confirmed: 18
+Gross listed: $9,900,000 | Realized revenue: $8,900,000
+Cost/item: $300,000 | Projected profit: $2,600,000 | Realized profit: $3,500,000
+```
+
+- **Gross listed** — the total value you placed on the AH.
+- **Realized revenue** — money confirmed by server messages (`bought your ... for ...`).
+- **Projected profit** — gross listed minus cost of listed items.
+- **Realized profit** — confirmed revenue minus cost of confirmed sales.
+
+To enable Discord, set `discordWebhookEnabled: true` and put your **private** webhook URL in `discordWebhookUrl` in the local `config/asell.json`. Only HTTPS webhooks on `discord.com` / `discordapp.com` are accepted, the URL is never stored in this repository, and all requests are asynchronous so the game never stutters.
+
+---
+
+## What anti-detection protections are built in?
+
+1. **Randomized timing** — delays vary by ±50% so click patterns look human.
+2. **Break simulator** — the bot pauses 5–10 seconds every 10–20 sales.
+3. **Staff chat monitor** — instantly stops and alerts on whispers or suspicious messages.
+4. **World / disconnect detection** — stops safely on dimension changes or kicks.
+5. **Listing-limit awareness** — on `You have too many listed items` it waits for a slot instead of spamming.
+6. **No mixins** — nothing hooks into game code, reducing anti-cheat risk.
+
+Use it responsibly: automation may still violate your server's rules.
+
+---
+
+## Command reference
+
+| Command | Action |
+|---------|--------|
+| `/asell asell 1k diamond axe sharpness 5` | Resell held item, undercut by 1k, keep own price when cheapest |
+| `/asell 1k [search text]` | Shorthand of the generic workflow |
+| `/asell axesharp5 450k` | List Diamond Axe Sharpness V at a fixed price |
+| `/asell sharpness5axe` | Master workflow: scan AH + undercut Sharpness V axes |
+| `/asell cost 300k` | Set acquisition cost per item for profit math |
+| `/asell report` | Send the financial report to Discord |
+| `/asell status` | Show live counts, gross value, revenue and profits |
+| `/asell autoorder on\|off` | Toggle automatic `/order` refill |
+| `/asell stop` | Stop the current task |
+| `/asell help` | Show all commands |
+
+---
+
+## Configuration reference (`config/asell.json`)
 
 ```json
 {
-  "defaultPrice": 100,
+  "defaultPrice": 449000,
   "targetItem": "minecraft:diamond_axe",
-  "heldItemWorkflow": false,
-  "heldItemTemplate": "",
+  "targetEnchantment": "sharpness",
+  "targetEnchantmentLevel": 5,
+  "desiredQuantity": 1,
+  "smartPricing": true,
+  "undercutAmount": 1000,
+  "useOwnPriceCheck": true,
+  "minimumMarketPrice": 400000,
+  "maximumMarketPrice": 500000,
+  "acquisitionCostPerItem": 0,
+  "autoOrder": true,
+  "orderCommand": "order",
   "autoReconnect": true,
   "reconnectDelaySeconds": 10,
   "maxReconnectAttempts": 6,
   "autoResumeSell": true,
-  "targetEnchantment": "sharpness",
-  "targetEnchantmentLevel": 5,
-  "desiredQuantity": 1,
-  "acquisitionCostPerItem": 0,
-  "guiClickDelay": 10,
-  "itemDelay": 30,
-  "commandDelay": 5,
-  "guiTimeout": 100,
-  "autoConfirmGui": true,
-  "chatNotifications": true,
   "discordWebhookEnabled": false,
-  "discordWebhookUrl": "",
-  "confirmSlotIndex": 15,
-  "guiTitleContains": "",
-  "autoOrder": true,
-  "orderCommand": "order",
-  "protectedItems": [
-    "minecraft:diamond",
-    "minecraft:netherite_ingot",
-    "minecraft:elytra"
-  ]
+  "discordWebhookUrl": ""
 }
 ```
 
-| Trường | Mô tả | Mặc định |
-|--------|-------|----------|
-| `defaultPrice` | Giá bán mặc định khi dùng `/asell` không có tham số | `100` |
-| `targetItem` | Item cần bán (registry ID) | `minecraft:chest` |
-| `desiredQuantity` | Số lượng mỗi lần bán | `1` |
-| `guiClickDelay` | Tick chờ trước khi click GUI xác nhận | `10` |
-| `itemDelay` | Tick chờ giữa các lần bán | `30` |
-| `commandDelay` | Tick chờ sau khi gửi lệnh `/ah sell` | `5` |
-| `guiTimeout` | Tick timeout chờ GUI mở | `100` |
-| `autoConfirmGui` | Tự click xác nhận trong GUI | `true` |
-| `chatNotifications` | Hiện thông báo trong chat | `true` |
-| `autoReconnect` | Tự join lại server sau khi bị disconnect | `true` |
-| `reconnectDelaySeconds` | Thời gian chờ giữa các lần reconnect | `10` |
-| `maxReconnectAttempts` | Số lần thử reconnect tối đa | `6` |
-| `autoResumeSell` | Tự chạy lại workflow bán sau khi reconnect thành công | `true` |
-| `acquisitionCostPerItem` | Cost mua mỗi item từ order để tính profit | `0` |
-| `discordWebhookEnabled` | Bật thông báo Discord tùy chọn | `false` |
-| `discordWebhookUrl` | Discord webhook URL, chỉ lưu local | `""` |
-| `confirmSlotIndex` | Slot fallback nếu auto-detect lỗi | `15` |
-| `guiTitleContains` | Lọc GUI theo tiêu đề (để trống = bỏ qua) | `""` |
-| `autoOrder` | Tự lấy đồ từ `/order` khi hết hàng | `false` |
-| `orderCommand` | Lệnh order tùy chỉnh | `"order"` |
-| `protectedItems` | Danh sách item không bao giờ bị vứt | xem config |
+| Key | Description | Default |
+|-----|-------------|---------|
+| `undercutAmount` | Distance under a competitor's lowest price | `1000` |
+| `useOwnPriceCheck` | Keep your price when you are already the cheapest | `true` |
+| `acquisitionCostPerItem` | Buy cost per item from `/order` for profit math | `0` |
+| `autoOrder` | Auto-collect from `/order` when out of stock | `true` |
+| `autoReconnect` | Auto-rejoin after a disconnect | `true` |
+| `discordWebhookUrl` | **Never commit this** — paste your private URL locally | `""` |
 
 ---
 
-## 🛡️ Tính năng chống ban
+## How do I build and install it?
 
-ASell được thiết kế để tránh bị phát hiện là bot:
-
-1. **Random delay**: Thời gian giữa các lần bán ngẫu nhiên trong khoảng ±50% so với giá trị đặt
-2. **Break Simulator**: Tự động nghỉ 5–10 giây sau mỗi 10–20 lần bán liên tiếp
-3. **Staff Monitor**: Ngay khi phát hiện whisper/tin nhắn riêng từ admin → dừng ngay + phát âm thanh cảnh báo
-4. **World change detection**: Tự dừng khi đổi server/world
-5. **Disconnect detection**: Tự dừng khi mất kết nối
-6. **No mixin**: Không hook vào game code, giảm nguy cơ bị phát hiện bởi anti-cheat
-
-### ⚠️ Lưu ý
-
-- Tắt **"Pause on Lost Focus"** trong Video Settings nếu muốn mod chạy khi alt-tab
-- Mod hoạt động trên client-side, không gửi packet bất thường
-- Vẫn có rủi ro khi sử dụng trên server có hệ thống anti-bot nghiêm ngặt
-
----
-
-### Discord webhook tùy chọn
-
-Webhook mặc định tắt. Để bật, sửa `config/asell.json` trong profile Minecraft (không commit URL webhook vào Git):
-
-```json
-{
-  "discordWebhookEnabled": true,
-  "discordWebhookUrl": "https://discord.com/api/webhooks/..."
-}
-```
-
-Mod chỉ chấp nhận HTTPS webhook của `discord.com` hoặc `discordapp.com` và gửi thông báo bất đồng bộ khi bắt đầu, collect order, list thành công, xác nhận sale, hoàn tất hoặc dừng do lỗi.
-
-Financial report gồm số item collected/listed/sold, gross listed value, realized revenue, cost mỗi item, projected profit và realized profit. Đặt cost bằng `/asell cost 300k`, kiểm tra bằng `/asell status`, hoặc gửi snapshot Discord bằng `/asell report`.
-
-### Chống drop giá (own-price check)
-
-Trước mỗi lần list, mod mở `/ah <tên bạn> <item>` để đọc giá rẻ nhất của hàng mình rồi mở `/ah <item>` đọc giá thị trường:
-
-- Nếu hàng mình đang bằng/rẻ hơn hoặc bằng giá rẻ nhất thị trường → **list đúng giá đó** (giữ vị trí, không giảm).
-- Nếu hàng mình cao hơn (hoặc chưa có listing) → **undercut 1k** so với giá thị trường.
-
-Cấu hình `useOwnPriceCheck` (mặc định `true`). Tên player lấy tự động từ game.
-
-### Auto-Reconnect
-
-Khi bị disconnect (mất mạng, server restart, kick tạm thời), mod sẽ tự join lại server sau `reconnectDelaySeconds` giây, thử tối đa `maxReconnectAttempts` lần, và khi thành công sẽ tự chạy lại workflow bán cuối cùng nếu `autoResumeSell=true`. Sau mỗi lần thử và khi bỏ cuộc đều gửi thông báo vào webhook nếu đã bật.
-
-Giới hạn: mod chạy trong game **không thể tự refresh token Microsoft**, nên nếu server báo `Invalid session. Please restart your game and launcher` và mọi lần reconnect đều thất bại, bạn phải khởi động lại game/launcher để đăng nhập lại. Mod sẽ dừng thử và gửi cảnh báo webhook.
-
-## 🔧 Build từ source
+**Requirements:** Minecraft 1.21.1, Fabric Loader 0.16+, Fabric API for 1.21.1, JDK 21+.
 
 ```bash
-git clone https://github.com/nguyenttuca/asell-mod.git
-cd asell-mod
+git clone git@github.com:dinhkarate/donutsmp-auction-resell-mods.git
+cd donutsmp-auction-resell-mods
 ./gradlew build
-# Output: build/libs/asell-fabric-1.21.1-*.jar
+# Output: build/libs/donutsell-fabric-1.21.1-1.0.0.jar
 ```
 
-Yêu cầu: JDK 21+
+Copy the `.jar` into `.minecraft/mods/` and launch with Fabric. Set **Pause on Lost Focus = OFF** (or press `F3+P`) if you want the bot to keep running while you alt-tab.
 
 ---
 
-## 🤝 Đóng góp
+## Architecture
 
-Pull request và issue đều được hoan nghênh!
-
-1. Fork repo
-2. Tạo branch mới: `git checkout -b feature/ten-tinh-nang`
-3. Commit: `git commit -m "feat: thêm tính năng X"`
-4. Push và mở PR
+```
+com.donutsell/
+├── DonutSellMod.java          # Entry point, events, auto-reconnect
+├── command/
+│   └── DonutSellCommand.java  # /asell command tree
+├── config/
+│   └── DonutSellConfig.java   # JSON config load/save
+├── inventory/
+│   └── InventoryUtils.java    # Find/count/match items, hotbar selection
+├── keybind/
+│   └── KeybindHandler.java    # Optional toggle key
+├── task/
+│   ├── SellState.java         # State machine states
+│   └── SellTaskManager.java   # Core sell/scan/order/profit engine
+└── util/
+    ├── ChatUtils.java         # In-game chat messages
+    └── DiscordWebhook.java    # Async Discord notifications
+```
 
 ---
 
-## 📄 License
+## FAQ
 
-MIT License — Xem file [LICENSE](LICENSE) để biết thêm chi tiết.
+**Is this a cheating mod?**
+It is a client-side automation mod. It sends the same commands and clicks a human player would, without mixins or packet manipulation, but server rules may still prohibit automation — use it at your own risk.
+
+**Does it work on servers other than DonutSMP?**
+The core works on any Auction House plugin that uses `/ah sell <price>` and a confirm GUI, but the search syntax and order GUI are tuned for the DonutSMP plugin. Other plugins may need small adjustments.
+
+**Why doesn't it undercut every time?**
+By design. If your listing is already the cheapest, undercutting again would only drop the market price and reduce your own profit. The bot only undercuts real competitors.
+
+**What happens if I get disconnected?**
+The bot reconnects to the same server after 10 seconds (up to 6 attempts) and automatically resumes the last selling workflow. If the session token is truly invalid, it stops and alerts the webhook instead of looping.
+
+**How do I prevent selling the wrong item?**
+The generic workflow captures your held item as the template and matches item + enchantments when scanning the AH. The inventory gate matches by item type to avoid over-strict loops.
+
+**Does the mod read the screen with OCR?**
+No. It reads Minecraft's internal `ItemStack`, enchantment and GUI slot data directly — no screenshots or OCR are involved.
+
+---
+
+## Credits
+
+This project is a **heavily extended fork** of the original **ASell — Auto Auction House Sell Mod** by [**nguyenttuca**](https://github.com/nguyenttuca) ([original repository](https://github.com/nguyenttuca/DonutSMP-Auto-Seller-Mod), [original video](https://www.youtube.com/watch?v=JwW8hdzeM0g)). Big thanks to the original author for the core auto-seller engine.
+
+This fork adds: live AH price scanning with own-price keep, generic held-item reselling for any enchanted item, auto-order refill, profit & revenue tracking with Discord webhook reports, and auto-reconnect with workflow resume.
+
+Distributed under the **MIT License** — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-Made with ❤️ by **[nguyenttuca](https://github.com/nguyenttuca)**
+**SEO / AI-search keywords:** Minecraft auction house resell bot · AH undercut bot · DonutSMP economy bot · Minecraft flip items mod · auto resell Fabric mod 1.21.1 · enchanted item reseller · auction house price bot · AFK money making Minecraft · Diamond Axe Sharpness V auto seller · Minecraft AI citation · GEO optimization
 
-⭐ Nếu mod hữu ích, hãy cho một star nhé!
+⭐ If this helped your Minecraft economy, star the repo!
 
 </div>
