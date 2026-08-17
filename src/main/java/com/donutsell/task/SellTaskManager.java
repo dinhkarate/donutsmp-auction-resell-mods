@@ -47,6 +47,13 @@ public class SellTaskManager {
     private boolean dynamicPriceRun = false;
     private ItemStack heldItemTemplate = null;
     private String heldSearchQuery = null;
+
+    // Last workflow snapshot (used to resume after auto-reconnect)
+    private String lastWorkflowMode = null;
+    private int lastWorkflowPrice = 0;
+    private int lastWorkflowUndercut = 0;
+    private String lastWorkflowQuery = null;
+
     private int tickCounter = 0;
     private int itemsSold = 0;
     private int itemsCollected = 0;
@@ -131,6 +138,28 @@ public class SellTaskManager {
         config.desiredQuantity = 1;
         config.autoOrder = true;
         this.heldSearchQuery = (searchQuery != null && !searchQuery.isBlank()) ? searchQuery.trim() : null;
+        lastWorkflowMode = "held";
+        lastWorkflowUndercut = undercut;
+        lastWorkflowQuery = this.heldSearchQuery;
+        config.save();
+        dynamicPriceRun = true;
+        start(0);
+    }
+
+    private void beginHeldWorkflow() {
+        if (heldItemTemplate == null || heldItemTemplate.isEmpty()) {
+            ChatUtils.sendError("Không có item mẫu. Hãy cầm item rồi chạy lại lệnh.");
+            return;
+        }
+        config.heldItemWorkflow = true;
+        config.heldItemTemplate = InventoryUtils.getItemId(heldItemTemplate);
+        config.targetItem = InventoryUtils.getItemId(heldItemTemplate);
+        config.targetEnchantment = "";
+        config.targetEnchantmentLevel = 0;
+        config.undercutAmount = lastWorkflowUndercut;
+        config.smartPricing = true;
+        config.desiredQuantity = 1;
+        config.autoOrder = true;
         config.save();
         dynamicPriceRun = true;
         start(0);
@@ -150,6 +179,7 @@ public class SellTaskManager {
         config.desiredQuantity = 1;
         config.autoOrder = true;
         config.save();
+        lastWorkflowMode = "sharpness";
         startSmart();
     }
 
@@ -165,6 +195,8 @@ public class SellTaskManager {
         config.autoOrder = true;
         config.defaultPrice = sellPrice;
         config.save();
+        lastWorkflowMode = "axefixed";
+        lastWorkflowPrice = sellPrice;
         start(sellPrice);
     }
 
@@ -257,6 +289,8 @@ public class SellTaskManager {
         }
         ChatUtils.sendInfo("Dùng §f/asell stop §7để dừng.");
 
+        lastWorkflowMode = "plain";
+        lastWorkflowPrice = sellPrice;
         state = SellState.PREPARING_ITEM;
     }
 
@@ -307,6 +341,28 @@ public class SellTaskManager {
             ChatUtils.sendSuccess("Đã gửi financial report lên Discord webhook.");
         } else {
             ChatUtils.sendError("Webhook đang tắt hoặc URL không hợp lệ. Hãy rotate URL cũ rồi cấu hình URL mới.");
+        }
+    }
+
+    public boolean hasLastWorkflow() {
+        return lastWorkflowMode != null;
+    }
+
+    public void clearLastWorkflow() {
+        lastWorkflowMode = null;
+        lastWorkflowPrice = 0;
+        lastWorkflowUndercut = 0;
+        lastWorkflowQuery = null;
+    }
+
+    public void resumeLastRun() {
+        if (lastWorkflowMode == null) return;
+        switch (lastWorkflowMode) {
+            case "held" -> beginHeldWorkflow();
+            case "sharpness" -> startSharpness5Axe();
+            case "axefixed" -> startAxeSharp5Fixed(lastWorkflowPrice);
+            case "plain" -> start(lastWorkflowPrice);
+            default -> clearLastWorkflow();
         }
     }
 

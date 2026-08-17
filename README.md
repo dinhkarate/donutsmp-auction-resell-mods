@@ -147,6 +147,10 @@ Config lưu tại: `.minecraft/config/asell.json`
   "targetItem": "minecraft:diamond_axe",
   "heldItemWorkflow": false,
   "heldItemTemplate": "",
+  "autoReconnect": true,
+  "reconnectDelaySeconds": 10,
+  "maxReconnectAttempts": 6,
+  "autoResumeSell": true,
   "targetEnchantment": "sharpness",
   "targetEnchantmentLevel": 5,
   "desiredQuantity": 1,
@@ -182,6 +186,10 @@ Config lưu tại: `.minecraft/config/asell.json`
 | `guiTimeout` | Tick timeout chờ GUI mở | `100` |
 | `autoConfirmGui` | Tự click xác nhận trong GUI | `true` |
 | `chatNotifications` | Hiện thông báo trong chat | `true` |
+| `autoReconnect` | Tự join lại server sau khi bị disconnect | `true` |
+| `reconnectDelaySeconds` | Thời gian chờ giữa các lần reconnect | `10` |
+| `maxReconnectAttempts` | Số lần thử reconnect tối đa | `6` |
+| `autoResumeSell` | Tự chạy lại workflow bán sau khi reconnect thành công | `true` |
 | `acquisitionCostPerItem` | Cost mua mỗi item từ order để tính profit | `0` |
 | `discordWebhookEnabled` | Bật thông báo Discord tùy chọn | `false` |
 | `discordWebhookUrl` | Discord webhook URL, chỉ lưu local | `""` |
@@ -226,6 +234,12 @@ Webhook mặc định tắt. Để bật, sửa `config/asell.json` trong profil
 Mod chỉ chấp nhận HTTPS webhook của `discord.com` hoặc `discordapp.com` và gửi thông báo bất đồng bộ khi bắt đầu, collect order, list thành công, xác nhận sale, hoàn tất hoặc dừng do lỗi.
 
 Financial report gồm số item collected/listed/sold, gross listed value, realized revenue, cost mỗi item, projected profit và realized profit. Đặt cost bằng `/asell cost 300k`, kiểm tra bằng `/asell status`, hoặc gửi snapshot Discord bằng `/asell report`.
+
+### Auto-Reconnect
+
+Khi bị disconnect (mất mạng, server restart, kick tạm thời), mod sẽ tự join lại server sau `reconnectDelaySeconds` giây, thử tối đa `maxReconnectAttempts` lần, và khi thành công sẽ tự chạy lại workflow bán cuối cùng nếu `autoResumeSell=true`. Sau mỗi lần thử và khi bỏ cuộc đều gửi thông báo vào webhook nếu đã bật.
+
+Giới hạn: mod chạy trong game **không thể tự refresh token Microsoft**, nên nếu server báo `Invalid session. Please restart your game and launcher` và mọi lần reconnect đều thất bại, bạn phải khởi động lại game/launcher để đăng nhập lại. Mod sẽ dừng thử và gửi cảnh báo webhook.
 
 ## 🔧 Build từ source
 

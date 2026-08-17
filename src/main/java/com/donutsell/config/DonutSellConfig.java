@@ -49,6 +49,19 @@ public class DonutSellConfig {
     /** Exact held-item component template encoded for the current run. */
     public String heldItemTemplate = "";
 
+    // ====== Auto-Reconnect ======
+    /** Rejoin the server automatically after a disconnect. */
+    public boolean autoReconnect = true;
+
+    /** Delay before the first and between reconnect attempts. */
+    public int reconnectDelaySeconds = 10;
+
+    /** Maximum reconnect attempts before giving up. */
+    public int maxReconnectAttempts = 6;
+
+    /** Restart the last selling workflow automatically after a successful rejoin. */
+    public boolean autoResumeSell = true;
+
     /** Lowest accepted market price for smart pricing. */
     public int minimumMarketPrice = 400000;
 
@@ -159,6 +172,10 @@ public class DonutSellConfig {
         this.undercutAmount = other.undercutAmount;
         this.heldItemWorkflow = other.heldItemWorkflow;
         this.heldItemTemplate = other.heldItemTemplate;
+        this.autoReconnect = other.autoReconnect;
+        this.reconnectDelaySeconds = other.reconnectDelaySeconds;
+        this.maxReconnectAttempts = other.maxReconnectAttempts;
+        this.autoResumeSell = other.autoResumeSell;
         this.minimumMarketPrice = other.minimumMarketPrice;
         this.maximumMarketPrice = other.maximumMarketPrice;
         this.acquisitionCostPerItem = other.acquisitionCostPerItem;
