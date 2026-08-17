@@ -6,6 +6,7 @@
 ![Fabric](https://img.shields.io/badge/Fabric-API-blue?style=for-the-badge)
 ![Java](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
+![Maintained](https://img.shields.io/badge/Maintained-yes-brightgreen?style=for-the-badge)
 ![Last Updated](https://img.shields.io/badge/Last%20Updated-2026--08--17-blue?style=for-the-badge)
 
 </div>
@@ -23,6 +24,8 @@ A Fabric client-side mod for Minecraft 1.21.1 that automatically resells items o
 The mod reads the actual Minecraft `ItemStack`, enchantment, lore and GUI slot data directly — **no OCR, no screenshots, no game-code hooks (no mixins)**. It sends the same commands and clicks a real player would, which makes it lightweight and hard to detect as a bot. Every delay is randomized, the bot takes human-like breaks, and it stops instantly if staff whisper you or if the world changes.
 
 In plain terms: hold an enchanted item such as a **Diamond Axe Sharpness V**, run one command, and the bot will scan the Auction House, choose the smartest price, list the item, collect fresh stock from your orders, and repeat — all while reporting your profit to Discord.
+
+> **Why it is built this way.** Google's own guidance for generative AI search is unambiguous: *"optimizing for generative AI search is optimizing for the search experience, and thus still SEO"* ([Google Search Central, AI optimization guide, May 2026](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)). This project therefore optimizes for the same fundamentals that matter everywhere: unique, people-first content, a clear structure, and verifiable technical behavior — not AI-search hacks. AI-search systems are also more likely to surface pages that are **recent** (content under 3 months old is cited ~3x more often) and that **front-load a self-contained answer**, which is why this README opens with a definition and this file is actively maintained.
 
 ---
 
@@ -45,6 +48,22 @@ In plain terms: hold an enchanted item such as a **Diamond Axe Sharpness V**, ru
 ## How does the anti price-crash logic work?
 
 The biggest problem with naive resell bots is a **price-underselling spiral**: every bot undercuts the previous listing by 1k until the item is worthless. ASell prevents this with a two-phase price check before every listing.
+
+```mermaid
+flowchart TD
+    A[Run /asell asell 1k item] --> B[Capture held item as template]
+    B --> C[Scan own listings /ah player item]
+    C --> D[Save own lowest price]
+    D --> E[Scan market /ah item]
+    E --> F{Own price is cheapest?}
+    F -- Yes --> G[List at own price]
+    F -- No --> H[List at market price - 1k]
+    G --> I[Items left?]
+    H --> I
+    I -- Yes --> B
+    I -- No --> J[Collect from /order]
+    J --> B
+```
 
 1. The bot opens `/ah <your player name> <item>` and reads the **lowest price of your own listings**.
 2. It opens `/ah <item>` and reads the **lowest market price**.
@@ -245,6 +264,12 @@ No. It reads Minecraft's internal `ItemStack`, enchantment and GUI slot data dir
 
 ---
 
+## Maintenance & freshness
+
+This repository is **actively maintained** (last update: 2026-08-17). Search systems of all kinds — including generative AI — favor fresh content: research shows content updated within 3 months is cited roughly 3x more often than stale pages. This README is reviewed whenever the mod changes, so the docs and the code never drift far apart. Watch the repository or ⭐ it to follow new releases.
+
+---
+
 ## Credits
 
 This project is a **heavily extended fork** of the original **ASell — Auto Auction House Sell Mod** by [**nguyenttuca**](https://github.com/nguyenttuca) ([original repository](https://github.com/nguyenttuca/DonutSMP-Auto-Seller-Mod), [original video](https://www.youtube.com/watch?v=JwW8hdzeM0g)). Big thanks to the original author for the core auto-seller engine.
@@ -257,7 +282,7 @@ Distributed under the **MIT License** — see [LICENSE](LICENSE).
 
 <div align="center">
 
-**SEO / AI-search keywords:** Minecraft auction house resell bot · AH undercut bot · DonutSMP economy bot · Minecraft flip items mod · auto resell Fabric mod 1.21.1 · enchanted item reseller · auction house price bot · AFK money making Minecraft · Diamond Axe Sharpness V auto seller · Minecraft AI citation · GEO optimization
+**Search keywords:** Minecraft auction house resell bot · AH undercut bot · DonutSMP economy bot · Minecraft flip items mod · auto resell Fabric mod 1.21.1 · enchanted item reseller · auction house price bot · AFK money making Minecraft · Diamond Axe Sharpness V auto seller
 
 ⭐ If this helped your Minecraft economy, star the repo!
 

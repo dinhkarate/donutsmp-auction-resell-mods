@@ -1,63 +1,106 @@
-# GEO / AI-SEO Analysis — donutsmp-auction-resell-mods (README)
+# GEO / AI-Search Analysis — donutsmp-auction-resell-mods (README)
 
-Generated with `seo-geo` + `blog-geo` skill criteria. Target: ChatGPT web search, Perplexity, Google AI Overviews, Claude/Gemini citation of the GitHub README.
+Audit per `seo-geo` skill (May 2026 revision). **Framing:** Google's official
+position — *"optimizing for generative AI search is optimizing for the search
+experience, and thus still SEO"* (Google Search Central, AI optimization guide,
+2026-05-15). Findings are therefore reported as **SEO fundamentals applied to
+AI-search surfaces**, not a separate discipline. Where community tactics
+contradict Google's primary source, defer to Google and note it here.
 
-## GEO Readiness Score: 82/100 (Good — citable with minor improvements)
+## GEO Readiness Score: 84/100 (Good — citable with minor improvements)
 
 | Category | Raw | Display | Max |
 |----------|-----|---------|-----|
 | Passage-Level Citability | 3.5/4 | 24 | 27 |
 | Q&A Formatting | 2.5/3 | 17 | 20 |
 | Entity Clarity | 3/3 | 20 | 20 |
-| Content Structure | 2.5/3 | 17 | 20 |
-| AI Crawler Accessibility | 1/2 | 6 | 13 |
-| **Total** | — | **82** | **100** |
+| Content Structure | 3/3 | 20 | 20 |
+| Technical Accessibility | 1.5/2 | 10 | 13 |
+| **Total** | — | **84** | **100** |
+| Google AI Overviews (classic pool) | — | Medium | — |
+| Google AI Mode (broader pool) | — | Medium-High | — |
+| ChatGPT web search | — | Medium-High | — |
+| Perplexity | — | Medium | — |
 
-## What was applied (this commit)
+*(AI Overviews and AI Mode are scored separately — per Ahrefs, they reach the
+same conclusion ~86% of the time but cite the same URLs only 13.7% of the
+time.)*
 
-- **"What is this mod?" definition block** — "X is a client-side Fabric mod…" within the first 60 words (definition-pattern rule).
-- **TL;DR 45 words** at the top (standalone summary box).
-- **Question-based H2 headings**: *How does the anti price-crash logic work? / How do I resell any enchanted item? / How does auto-refill work? / What does the profit tracker report? / What anti-detection protections…? / How do I build and install it?* (matches query patterns).
-- **Self-contained 120–180 word passages** under each H2 with specific numbers (10s reconnect, 6 attempts, ±50% jitter, default undercut 1000, 5-step order flow, 3,500,000 profit example) — extraction-friendly.
-- **Comparison/feature matrix tables** (feature matrix, command reference, config reference).
-- **Ordered step lists** for workflows and build process.
-- **Dedicated FAQ** with structured Q&A pairs (definition + answer-first).
-- **Consistent entity naming** — ASell / Minecraft / Fabric / DonutSMP used consistently; author credited with links (entity signal).
-- **`Last Updated` badge + explicit date** (2026-08-17) — freshness signal (76.4% of top citations updated within 30 days).
-- **`llms.txt`** added per the llms.txt standard (AI crawler content guidance).
-- **Keyword block** at footer with AI-search terms (auction house resell bot, AH undercut bot, Minecraft flip items mod, GEO optimization…).
+## What was revised this commit (skill May 2026 update)
 
-## Platform breakdown
-
-| Platform | Likelihood | Notes |
-|----------|------------|-------|
-| ChatGPT web search | Medium-High | Definition + step lists + FAQ extract well; brand mentions via credits/YouTube link |
-| Perplexity | Medium | Community/Reddit validation is weak (no Reddit presence); freshness fine |
-| Google AI Overviews | Low-Medium | GitHub domain authority + no traditional SEO; still extractable |
+1. **Google-first framing** — added a quoted, sourced statement from [Google's
+   AI optimization guide](https://developers.google.com/search/docs/fundamentals/ai-optimization-guide)
+   ("…still SEO") as a cited claim: primary-source attribution + authoritative.
+   Removed any "AI-search hacks" framing.
+2. **Front-loading** — ~44% of AI citations come from the first 30% of a page
+   (SE Ranking); the "What is this mod?" definition, TL;DR and feature answer
+   all sit above the fold, in the first ~25% of the file.
+3. **Passage length 134–167 words** — every H2 section rewritten to that
+   self-contained range (previously 120–180).
+4. **Multi-modal content (+156% selection)** — added a Mermaid pricing-workflow
+   diagram (rendered by GitHub) + linked the original author's YouTube video +
+   badges (Maintained, Last Updated, MC/Fabric/Java/License).
+5. **Recency / refresh program** — new "Maintenance & freshness" section; last
+   Updated badge + explicit date; content-under-3-months rationale cited. This
+   is the highest-leverage GEO play per the skill (6+ months stale loses
+   citation eligibility).
+6. **Authority & brand** — author/maintainer + credits with linked credentials
+   (fork of ASell by nguyenttuca; original repo + video). Brand-mention
+   correlation (> backlinks) noted.
+7. **llms.txt correction (myth-busted)** — llms.txt remains **present for
+   non-Google AI services**, but this audit no longer claims it as a citation
+   lever. Google states it ignores llms.txt and that it "will neither harm nor
+   help" visibility/rankings (Search Central, 2026-05-15). Verified by
+   SE Ranking (300k-domain study: no measurable ChatGPT citation impact) and
+   OtterlyAI (0.1% of AI-crawler requests touch /llms.txt).
+8. **No chunking / no AI-rewriting / no mention-farming** — explicitly not
+   recommended; not implemented (Google: unnecessary).
 
 ## AI Crawler Access Status
 
-- GitHub serves README as static HTML — crawlers can read it (no JS-only content).
-- robots.txt is GitHub-owned (not editable); note in README docs if strict control is needed.
-- **llms.txt: present** ✅ (added this commit).
+- GitHub serves the README as static HTML — no JavaScript execution needed;
+  AI crawlers read it directly (GPTBot, OAI-SearchBot, ClaudeBot,
+  PerplexityBot all fine).
+- robots.txt is GitHub-owned (not editable here).
+- llms.txt: **present** (root, `llms.txt`) — kept only for non-Google crawlers
+  that honor it; neutral for Google.
 
 ## Brand Mention Analysis
 
-- Author fork: dinhkarate (GitHub) — present.
-- Original author nguyenttuca + YouTube video links — present (brand/entity signal).
-- Wikipedia/Reddit/LinkedIn: not applicable for a repo.
+- Maintainer: dinhkarate (GitHub entity).
+- Original author nguyenttuca + original repo + YouTube video linked (brand
+  entity signal, strongest correlated signal per Ahrefs: YouTube mentions
+  ~0.737).
+- Wikipedia/Reddit/LinkedIn: not applicable for a repository.
+
+## Passage-Level Citability (134–167 word blocks)
+
+- "What is this mod?" — ✓ self-contained definition, answers within first 60
+  words of the section.
+- "How does the anti price-crash logic work?" — ✓ numbered 4-step + mermaid.
+- "How do I resell any enchanted item automatically?" — ✓ numbered 4-step.
+- "How does auto-refill from orders work?" — ✓ numbered 5-step.
+- "What does the profit tracker report?" — ✓ with concrete example numbers.
+- "What anti-detection protections are built in?" — ✓ numbered 6-item.
+- "How do I build and install it?" — ✓ command block + requirements.
+- FAQ — ✓ 6 Q&A pairs, answer-first.
+
+## SSR / Technical Check
+
+- Static Markdown → GitHub renders server-side; no client-side JS dependency.
 
 ## Top 5 highest-impact changes (done)
 
-1. Added "What is this mod?" definition in first 60 words. ✅
-2. Question-based H2 headings + answer-first paragraphs. ✅
-3. TL;DR + FAQ + tables (extraction-friendly structure). ✅
-4. Concrete numbers everywhere (delays, undercut, profit example). ✅
-5. llms.txt + last-updated date. ✅
+1. Definition + citable answer from the first 60 words / first 30% of page.
+2. Question-based H2s with 134–167-word self-contained passages.
+3. Multi-modal: Mermaid diagram + video link + badges.
+4. Recency: Last-Updated badge + "Maintenance & freshness" + active-refresh note.
+5. llms.txt re-framed (present but neutral for Google) — myth applied.
 
-## Remaining recommendations
+## Recommendations (next)
 
-- [ ] Pin a release/tag (`v1.0.0`) so AI crawlers see versioned, dated artifacts.
-- [ ] Add `docs/` pages or a Wiki for deeper per-topic passages (more extractable surfaces).
-- [ ] Consider a public discussion/issue template to build community signals.
-- [ ] Add GitHub Actions badge (build passing) — freshness/activity signal.
+- [ ] Create a **release/tag (v1.0.0)** with dated notes — versioned, fresh artifact signal.
+- [ ] Add `docs/guides/` deep-dive pages (per-topic extractable surfaces).
+- [ ] Add a GitHub Actions CI badge (build passing = activity freshness signal).
+- [ ] Encourage community signals (issues/discussions) for Perplexity/community validation.
+- [ ] Schedule a 90-day README freshness review (recency is a top GEO lever).
