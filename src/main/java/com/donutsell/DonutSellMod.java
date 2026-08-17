@@ -230,7 +230,7 @@ public class DonutSellMod implements ClientModInitializer {
             DiscordWebhook.send(config, ChatUtils.lang("Không reconnect được sau ", "Could not reconnect after ") + reconnectAttempts
                     + " lần. Nếu lỗi 'invalid session' hãy restart launcher để mod không tự làm gì thêm.");
             if (config.chatNotifications) {
-                ChatUtils.sendError(ChatUtils.lang("Hết số lần reconnect. Nếu 'invalid session' → restart game/launcher.", "Out of reconnect attempts. If 'invalid session', restart the game/launcher."));
+                ChatUtils.sendError(ChatUtils.lang("Hết số lần reconnect. Nếu 'invalid session' → restart game/launcher.", "Out of reconnect attempts. If 'invalid session' -> restart game/launcher."));
             }
         }
     }

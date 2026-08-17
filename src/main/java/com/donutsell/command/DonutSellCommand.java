@@ -200,7 +200,7 @@ public class DonutSellCommand {
                                     config.targetEnchantment, config.targetEnchantmentLevel);
                             ChatUtils.sendInfo(ChatUtils.lang("═══ Trạng thái ASell ═══", "=== ASell status ==="));
                             ChatUtils.sendInfo(ChatUtils.lang("State:      §f", "State:      §f") + taskManager.getState());
-                            ChatUtils.sendInfo(ChatUtils.lang("Đã bán:     §f", "Sold:       §f") + taskManager.getItemsSold() + ChatUtils.lang(" lần", ""));
+                            ChatUtils.sendInfo(ChatUtils.lang("Đã bán:     §f", "Sold:       §f") + taskManager.getItemsSold() + ChatUtils.lang(" lần", " times"));
                             ChatUtils.sendInfo(ChatUtils.lang("Item:       §f", "Item:       §f") + config.targetItem);
                             ChatUtils.sendInfo(ChatUtils.lang("Còn lại:    §f", "Left:       §f") + total + ChatUtils.lang(" item", " item"));
                             ChatUtils.sendInfo(ChatUtils.lang("Giá:        §f", "Price:      §f") + config.defaultPrice);
@@ -291,7 +291,7 @@ public class DonutSellCommand {
                                 int ticks = IntegerArgumentType.getInteger(ctx, "ticks");
                                 config.itemDelay = ticks;
                                 config.save();
-                                ChatUtils.sendSuccess(ChatUtils.lang("Đã đặt delay: §f", "Delay set: §f") + ticks + ChatUtils.lang(" tick §7(", " tick §7(")
+                                ChatUtils.sendSuccess(ChatUtils.lang("Đã đặt delay: §f", "Delay set: §f") + ticks + ChatUtils.lang(" tick §7(", " ticks §7(")
                                         + String.format("%.1f", ticks / 20.0) + ChatUtils.lang("s)", "s)"));
                                 return 1;
                             })
@@ -395,7 +395,7 @@ public class DonutSellCommand {
         ChatUtils.sendInfo(ChatUtils.lang("§f/asell delay <ticks>  §7Đặt delay giữa các lần bán", "§f/asell delay <ticks>  §7Set delay between sales"));
         ChatUtils.sendInfo(ChatUtils.lang("§f/asell slot <n>       §7Đặt slot xác nhận GUI", "§f/asell slot <n>       §7Set GUI confirm slot"));
         ChatUtils.sendInfo(ChatUtils.lang("§e--- Auto-Order ---", "§e--- Auto-Order ---"));
-        ChatUtils.sendInfo(ChatUtils.lang("§f/asell autoorder on   §7Bật tự lấy đồ từ /order", "§f/asell autoorder on   §7Enable /order auto-refill"));
+        ChatUtils.sendInfo(ChatUtils.lang("§f/asell autoorder on   §7Bật tự lấy đồ từ /order", "§f/asell autoorder on   §7Enable auto-refill from /order"));
         ChatUtils.sendInfo(ChatUtils.lang("§f/asell autoorder off  §7Tắt auto-order", "§f/asell autoorder off  §7Disable auto-order"));
         ChatUtils.sendInfo(ChatUtils.lang("§f/asell ordercmd <cmd> §7Đặt lệnh order tùy chỉnh", "§f/asell ordercmd <cmd> §7Set custom order command"));
         ChatUtils.sendInfo(ChatUtils.lang("§7Config file: .minecraft/config/asell.json", "§7Config file: .minecraft/config/asell.json"));
