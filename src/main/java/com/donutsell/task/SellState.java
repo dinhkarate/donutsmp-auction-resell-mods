@@ -39,6 +39,14 @@ public enum SellState {
     /** Waiting when Auction House listings are full */
     WAITING_FOR_AH_SLOT,
 
+    // ========== /sell Inventory Workflow ==========
+    /** Opening /sell GUI */
+    SELLINV_OPEN,
+    /** Moving inventory items into the sell GUI */
+    SELLINV_FILL,
+    /** Clicking the green confirm button */
+    SELLINV_CONFIRM,
+
     /** All items sold successfully */
     FINISHED,
     /** Error occurred */

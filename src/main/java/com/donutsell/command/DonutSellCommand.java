@@ -123,6 +123,14 @@ public class DonutSellCommand {
                         })
                     )
 
+                    // /asell sellinv
+                    .then(ClientCommandManager.literal("sellinv")
+                        .executes(ctx -> {
+                            taskManager.startSellInv();
+                            return 1;
+                        })
+                    )
+
                     // /asell stop
                     .then(ClientCommandManager.literal("stop")
                         .executes(ctx -> {
@@ -320,7 +328,7 @@ public class DonutSellCommand {
         ChatUtils.sendInfo("§f/asell axesharp5 <giá> §7List Diamond Axe Sharpness V theo giá cố định");
         ChatUtils.sendInfo("§f/asell <giá>          §7Bán với giá tùy chỉnh");
         ChatUtils.sendInfo("§f/asell                §7Bán với giá mặc định");
-        ChatUtils.sendInfo("§f/asell report         §7Gửi financial report lên Discord");
+        ChatUtils.sendInfo("§f/asell sellinv        §7Mở /sell, đẩy hết inventory vào rồi bấm confirm");
         ChatUtils.sendInfo("§f/asell stop           §7Dừng tác vụ");
         ChatUtils.sendInfo("§f/asell status         §7Xem trạng thái");
         ChatUtils.sendInfo("§f/asell reload         §7Tải lại config");

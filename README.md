@@ -162,6 +162,7 @@ Use it responsibly: automation may still violate your server's rules.
 | `/asell report` | Send the financial report to Discord |
 | `/asell status` | Show live counts, gross value, revenue and profits |
 | `/asell autoorder on\|off` | Toggle automatic `/order` refill |
+| `/asell sellinv` | Open `/sell`, push entire inventory in, click the green confirm |
 | `/asell stop` | Stop the current task |
 | `/asell help` | Show all commands |
 
@@ -212,6 +213,8 @@ Use it responsibly: automation may still violate your server's rules.
 | `breakAfterSalesMin/Max` | Sales before a human-like break | `10/20` |
 | `breakSecondsMin/Max` | Break length in seconds | `5/10` |
 | `ownPriceCheckChance` | Chance to run the own-listing scan (lower = less regular pattern) | `1.0` |
+| `sellInvClickDelayMin/Max` | `/sell` workflow: random ticks between item moves | `8/25` |
+| `sellInvConfirmDelayMin/Max` | `/sell` workflow: random ticks before confirm | `20/60` |
 | `discordWebhookUrl` | **Never commit this** — paste your private URL locally | `""` |
 
 ---

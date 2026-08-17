@@ -12,6 +12,8 @@ import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.Registries;
 import net.minecraft.screen.slot.SlotActionType;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -103,6 +105,13 @@ public class SellTaskManager {
     private int ownLowestPrice = Integer.MAX_VALUE;
     private int marketLowestPrice = Integer.MAX_VALUE;
     private long runStartMillis = 0;
+
+    // /sell inventory workflow fields
+    private final List<Integer> sellInvQueue = new ArrayList<>();
+    private int sellInvIndex = 0;
+    private int sellInvMoved = 0;
+    private int sellInvNextClickDelay = 0;
+    private int sellInvConfirmDelay = 0;
 
     private int randomizeDelay(int baseDelay) {
         if (baseDelay <= 5) return baseDelay;
@@ -227,6 +236,32 @@ public class SellTaskManager {
         } catch (NumberFormatException ignored) {
             return null;
         }
+    }
+
+    public void startSellInv() {
+        if (isRunning()) {
+            ChatUtils.sendWarning("Đang chạy! Dùng /asell stop để dừng trước.");
+            return;
+        }
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null || mc.world == null) {
+            ChatUtils.sendError("Bạn phải đang ở trong game!");
+            return;
+        }
+        sellInvMoved = 0;
+        sellInvIndex = 0;
+        sellInvQueue.clear();
+        runStartMillis = System.currentTimeMillis();
+        lastWorkflowMode = "sellinv";
+        tickCounter = 0;
+        state = SellState.SELLINV_OPEN;
+        ChatUtils.sendSuccess("═══ Bắt đầu /sell toàn bộ inventory ═══");
+        if (config.chatNotifications) ChatUtils.sendInfo("Dùng /asell stop để dừng.");
+    }
+
+    private int randomTicks(int min, int max) {
+        if (max <= min) return min;
+        return min + (int) (Math.random() * (max - min + 1));
     }
 
     public void startPlain(int sellPrice) {
@@ -377,6 +412,7 @@ public class SellTaskManager {
             case "held" -> beginHeldWorkflow();
             case "sharpness" -> startSharpness5Axe();
             case "axefixed" -> startAxeSharp5Fixed(lastWorkflowPrice);
+            case "sellinv" -> startSellInv();
             case "plain" -> start(lastWorkflowPrice);
             default -> clearLastWorkflow();
         }
@@ -429,6 +465,9 @@ public class SellTaskManager {
             case NAVIGATING_TO_COLLECT     -> handleNavigatingToCollect(mc);
             case COLLECTING_ORDER_ITEMS    -> handleCollectingOrderItems(mc);
             case WAITING_FOR_AH_SLOT       -> handleWaitingAhSlot();
+            case SELLINV_OPEN               -> handleSellInvOpen(mc);
+            case SELLINV_FILL               -> handleSellInvFill(mc);
+            case SELLINV_CONFIRM            -> handleSellInvConfirm(mc);
             default -> { /* IDLE, FINISHED, ERROR */ }
         }
     }
@@ -1401,6 +1440,144 @@ public class SellTaskManager {
                 + "\nCost/item: $" + config.acquisitionCostPerItem
                 + " | Projected profit: $" + getProjectedProfit()
                 + " | Realized profit: $" + getRealizedProfit();
+    }
+
+    // ========================= /sell Inventory Workflow =========================
+
+    private void handleSellInvOpen(MinecraftClient mc) {
+        if (tickCounter == 0) currentCommandDelay = randomizeDelay(config.commandDelay);
+        tickCounter++;
+        if (tickCounter < currentCommandDelay) return;
+
+        if (mc.currentScreen != null) {
+            mc.player.closeHandledScreen();
+            tickCounter = currentCommandDelay - 5;
+            return;
+        }
+
+        if (mc.getNetworkHandler() != null) {
+            mc.getNetworkHandler().sendCommand("sell");
+        }
+        if (config.chatNotifications) ChatUtils.sendAction("Mở /sell để bán toàn bộ inventory...");
+        sellInvMoved = 0;
+        sellInvIndex = 0;
+        sellInvQueue.clear();
+        state = SellState.SELLINV_FILL;
+        tickCounter = 0;
+    }
+
+    private void handleSellInvFill(MinecraftClient mc) {
+        if (!(mc.currentScreen instanceof HandledScreen<?>)) {
+            tickCounter++;
+            if (tickCounter > config.guiTimeout) {
+                ChatUtils.sendError("Không mở được GUI /sell; dừng.");
+                DiscordWebhook.send(config, "SELLINV lỗi: không mở được GUI /sell.");
+                state = SellState.ERROR;
+                tickCounter = 0;
+            }
+            return;
+        }
+        if (tickCounter < 10) { tickCounter++; return; } // chờ GUI render
+        if (mc.player == null || mc.player.currentScreenHandler == null) return;
+
+        if (sellInvQueue.isEmpty()) {
+            int totalSlots = mc.player.currentScreenHandler.slots.size();
+            int containerSize = Math.max(0, totalSlots - 36);
+            for (int i = containerSize; i < totalSlots; i++) {
+                net.minecraft.screen.slot.Slot s = mc.player.currentScreenHandler.getSlot(i);
+                if (s == null || !s.hasStack() || s.getStack().isEmpty()) continue;
+                String id = InventoryUtils.getItemId(s.getStack());
+                boolean isProtected = false;
+                for (String prot : config.protectedItems) {
+                    if (id.equals(prot)) { isProtected = true; break; }
+                }
+                if (!isProtected) sellInvQueue.add(i);
+            }
+            sellInvNextClickDelay = randomTicks(config.sellInvClickDelayMin, config.sellInvClickDelayMax);
+            if (config.chatNotifications) {
+                ChatUtils.sendInfo("Đưa " + sellInvQueue.size() + " ô item vào /sell...");
+            }
+        }
+
+        if (sellInvQueue.isEmpty()) {
+            state = SellState.SELLINV_CONFIRM;
+            tickCounter = 0;
+            return;
+        }
+
+        tickCounter++;
+        if (tickCounter < sellInvNextClickDelay) return;
+
+        InventoryUtils.clickScreenSlot(sellInvQueue.get(sellInvIndex), 0, SlotActionType.QUICK_MOVE);
+        sellInvMoved++;
+        sellInvIndex++;
+        sellInvNextClickDelay = randomTicks(config.sellInvClickDelayMin, config.sellInvClickDelayMax);
+        tickCounter = 0;
+
+        if (sellInvIndex >= sellInvQueue.size()) {
+            if (config.chatNotifications) {
+                ChatUtils.sendSuccess("Đã đưa hết " + sellInvMoved + " ô vào /sell; chờ xác nhận...");
+            }
+            state = SellState.SELLINV_CONFIRM;
+            tickCounter = 0;
+        }
+    }
+
+    private void handleSellInvConfirm(MinecraftClient mc) {
+        if (!(mc.currentScreen instanceof HandledScreen<?>)) {
+            finishSellInv("GUI /sell đã đóng; xem như đã bán " + sellInvMoved + " ô");
+            return;
+        }
+        if (tickCounter == 0) {
+            sellInvConfirmDelay = randomTicks(config.sellInvConfirmDelayMin, config.sellInvConfirmDelayMax);
+        }
+        tickCounter++;
+        if (tickCounter < sellInvConfirmDelay) return;
+        if (mc.player == null || mc.player.currentScreenHandler == null) return;
+
+        int totalSlots = mc.player.currentScreenHandler.slots.size();
+        int containerSize = Math.max(0, totalSlots - 36);
+        int confirmSlot = -1;
+        for (int i = 0; i < containerSize; i++) {
+            net.minecraft.screen.slot.Slot s = mc.player.currentScreenHandler.getSlot(i);
+            if (s == null || !s.hasStack()) continue;
+            String id = InventoryUtils.getItemId(s.getStack());
+            if (id.equals("minecraft:green_stained_glass_pane")
+                    || id.equals("minecraft:lime_stained_glass_pane")) {
+                confirmSlot = i;
+                break;
+            }
+            String name = s.getStack().getName().getString().toLowerCase(Locale.ROOT);
+            if (name.contains("confirm") || name.contains("xác nhận") || name.contains("đồng ý")) {
+                confirmSlot = i;
+                break;
+            }
+        }
+
+        if (confirmSlot == -1) {
+            ChatUtils.sendError("Không tìm thấy nút confirm trong GUI /sell; dừng.");
+            DiscordWebhook.send(config, "SELLINV lỗi: không tìm thấy nút confirm trong GUI /sell.");
+            state = SellState.ERROR;
+            tickCounter = 0;
+            return;
+        }
+
+        InventoryUtils.clickScreenSlot(confirmSlot);
+        if (config.chatNotifications) {
+            ChatUtils.sendSuccess("✅ Đã bấm confirm /sell (slot " + confirmSlot + ")");
+        }
+        finishSellInv("Đã bán " + sellInvMoved + " ô qua /sell");
+    }
+
+    private void finishSellInv(String msg) {
+        if (config.chatNotifications) ChatUtils.sendSuccess(msg);
+        DiscordWebhook.send(config, financialSummary(msg));
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player != null && mc.currentScreen != null) {
+            mc.player.closeHandledScreen();
+        }
+        state = SellState.FINISHED;
+        tickCounter = 0;
     }
 
     // ========================= Alert =========================

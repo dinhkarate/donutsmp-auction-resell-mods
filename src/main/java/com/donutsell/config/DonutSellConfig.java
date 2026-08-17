@@ -68,6 +68,13 @@ public class DonutSellConfig {
     /** Chance (0-1) to run the own-listing scan; lower = less regular bot pattern. */
     public double ownPriceCheckChance = 1.0;
 
+    /** /sell inventory workflow: random tick delay between item moves. */
+    public int sellInvClickDelayMin = 8;
+    public int sellInvClickDelayMax = 25;
+    /** /sell inventory workflow: random tick delay before clicking confirm. */
+    public int sellInvConfirmDelayMin = 20;
+    public int sellInvConfirmDelayMax = 60;
+
     /** Auto-stop after this many minutes (0 = unlimited). */
     public int maxRunMinutes = 0;
 
@@ -193,6 +200,10 @@ public class DonutSellConfig {
         this.autoResumeSell = other.autoResumeSell;
         this.useOwnPriceCheck = other.useOwnPriceCheck;
         this.ownPriceCheckChance = other.ownPriceCheckChance;
+        this.sellInvClickDelayMin = other.sellInvClickDelayMin;
+        this.sellInvClickDelayMax = other.sellInvClickDelayMax;
+        this.sellInvConfirmDelayMin = other.sellInvConfirmDelayMin;
+        this.sellInvConfirmDelayMax = other.sellInvConfirmDelayMax;
         this.maxRunMinutes = other.maxRunMinutes;
         this.breakAfterSalesMin = other.breakAfterSalesMin;
         this.breakAfterSalesMax = other.breakAfterSalesMax;

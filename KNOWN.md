@@ -50,7 +50,15 @@ server staff can read the exact code and fingerprint the behavior above.
 Do not commit `discordWebhookUrl` or any other secret — the webhook URL lives
 only in the local `config/asell.json`.
 
-## 6. Known technical limitations
+## 6. /sell inventory workflow
+
+`/asell sellinv` opens `/sell`, shift-clicks every non-protected inventory
+item into the sell GUI (random 0.4–1.3s between clicks), then clicks the green
+glass confirm button after a random 1–3s pause. It is a single run — re-run
+when you have new stock. Tune `sellInvClickDelayMin/Max` and
+`sellInvConfirmDelayMin/Max` if the server's click rate limits kick in.
+
+## 7. Known technical limitations
 
 - **Swap clicks can be rejected** on some server versions for items stored in
   the main inventory (slots 9–35). Hotbar items are selected via the
@@ -61,7 +69,7 @@ only in the local `config/asell.json`.
 - **llms.txt** is provided for non-Google AI crawlers; Google Search ignores
   it by design (per Google's AI optimization guide, 2026).
 
-## 7. Not a guarantee
+## 8. Not a guarantee
 
 None of the settings above guarantee you won't be flagged or banned.
 Anti-cheat systems evolve. If you get banned, don't blame the tool — accept
