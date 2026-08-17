@@ -550,6 +550,17 @@ public class SellTaskManager {
                     ChatUtils.sendAction("Chuyển item từ slot " + slot + " lên tay... (lần "
                             + swapStallCount + "/" + MAX_SWAP_ATTEMPTS + ")");
                 }
+                if (swapStallCount == 2) {
+                    String hand = mc.player.getMainHandStack().isEmpty()
+                            ? "EMPTY" : InventoryUtils.getItemId(mc.player.getMainHandStack());
+                    String screen = mc.currentScreen == null
+                            ? "null" : mc.currentScreen.getClass().getSimpleName();
+                    String handler = mc.player.currentScreenHandler == null
+                            ? "null" : mc.player.currentScreenHandler.getClass().getSimpleName();
+                    System.out.println("[ASell] swap debug: slot=" + slot + " mainHand=" + hand
+                            + " screen=" + screen + " handler=" + handler
+                            + " syncId=" + mc.player.currentScreenHandler.syncId);
+                }
                 InventoryUtils.swapToMainHand(slot);
                 state = SellState.SWITCHING_HOTBAR;
                 tickCounter = 0;

@@ -8,6 +8,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.network.packet.c2s.play.UpdateSelectedSlotC2SPacket;
 import net.minecraft.registry.Registries;
 import net.minecraft.screen.slot.SlotActionType;
 import net.minecraft.text.Text;
@@ -289,9 +290,30 @@ public class InventoryUtils {
      * Swap an inventory slot's contents with the currently selected hotbar slot.
      * Uses the SWAP action type which is server-safe and atomic.
      */
+    /**
+     * Select a hotbar slot as the current main hand without any click.
+     * Syncs with the server via the selected-slot packet, so it works even
+     * when the server ignores raw inventory click packets.
+     */
+    public static void selectHotbarSlot(int hotbarSlot) {
+        MinecraftClient mc = MinecraftClient.getInstance();
+        if (mc.player == null) return;
+        if (hotbarSlot < 0 || hotbarSlot > 8) return;
+        mc.player.getInventory().selectedSlot = hotbarSlot;
+        if (mc.getNetworkHandler() != null) {
+            mc.getNetworkHandler().sendPacket(new UpdateSelectedSlotC2SPacket(hotbarSlot));
+        }
+    }
+
     public static void swapToMainHand(int inventorySlot) {
         MinecraftClient mc = MinecraftClient.getInstance();
         if (mc.player == null || mc.interactionManager == null) return;
+
+        // Item is already in a hotbar slot: selecting it as the main hand needs no click.
+        if (inventorySlot < 9) {
+            selectHotbarSlot(inventorySlot);
+            return;
+        }
 
         int screenSlot = toScreenSlot(inventorySlot);
         int hotbarSlot = mc.player.getInventory().selectedSlot;
