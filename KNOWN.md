@@ -13,11 +13,11 @@ Recommended mitigations (configurable, see README):
 
 | Setting | Default | Why |
 |---------|---------|-----|
-| `maxRunMinutes` | `0` (unlimited) | Set e.g. `45` to auto-stop; don't run 24/7 |
-| `itemDelay` | `30` ticks | Raise to `300`+ for a much slower, less regular cadence |
-| `breakAfterSalesMin/Max` | `10/20` | More/fewer sales before a human-like break |
-| `breakSecondsMin/Max` | `5/10` | Longer random breaks reduce regularity |
-| `ownPriceCheckChance` | `1.0` | Lower (e.g. `0.5`) to skip the own-listing scan sometimes |
+| `maxRunMinutes` | `0` (unlimited) | Player-set cap if you ever want an auto-stop; runs 24/7 by default |
+| `itemDelay` | `30` ticks | Player can raise (up to 600 via `/asell delay`) for a slower cadence |
+| `breakAfterSalesMin/Max` | `10/20` | Player-adjustable human-like break frequency |
+| `breakSecondsMin/Max` | `5/10` | Player-adjustable break length |
+| `ownPriceCheckChance` | `1.0` | Player can lower (e.g. `0.5`) to skip the own-listing scan sometimes |
 
 ## 2. Behavioral fingerprints
 
