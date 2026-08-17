@@ -62,6 +62,9 @@ public class DonutSellConfig {
     /** Restart the last selling workflow automatically after a successful rejoin. */
     public boolean autoResumeSell = true;
 
+    /** Before pricing, check own lowest listing (e.g. /ah <player> <item>) and keep the price when already cheapest. */
+    public boolean useOwnPriceCheck = true;
+
     /** Lowest accepted market price for smart pricing. */
     public int minimumMarketPrice = 400000;
 
@@ -176,6 +179,7 @@ public class DonutSellConfig {
         this.reconnectDelaySeconds = other.reconnectDelaySeconds;
         this.maxReconnectAttempts = other.maxReconnectAttempts;
         this.autoResumeSell = other.autoResumeSell;
+        this.useOwnPriceCheck = other.useOwnPriceCheck;
         this.minimumMarketPrice = other.minimumMarketPrice;
         this.maximumMarketPrice = other.maximumMarketPrice;
         this.acquisitionCostPerItem = other.acquisitionCostPerItem;

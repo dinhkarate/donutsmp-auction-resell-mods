@@ -99,7 +99,9 @@ public class SellTaskManager {
     private static final Pattern SOLD_QUANTITY_PATTERN = Pattern.compile(
             "(?i)bought your(?:\\s+([0-9]+))?");
     private int smartPagesScanned = 0;
-    private int lowestMarketPrice = Integer.MAX_VALUE;
+    private boolean smartScanOwn = true;
+    private int ownLowestPrice = Integer.MAX_VALUE;
+    private int marketLowestPrice = Integer.MAX_VALUE;
 
     private int randomizeDelay(int baseDelay) {
         if (baseDelay <= 5) return baseDelay;
@@ -261,6 +263,10 @@ public class SellTaskManager {
         this.adjustDropCount = 0;
         this.retryCount = 0;
         this.swapStallCount = 0;
+        this.smartPagesScanned = 0;
+        this.smartScanOwn = config.useOwnPriceCheck;
+        this.ownLowestPrice = Integer.MAX_VALUE;
+        this.marketLowestPrice = Integer.MAX_VALUE;
         this.lastWorldKey = mc.world.getRegistryKey().getValue().toString();
         this.sellsSinceLastBreak = 0;
         this.sellsTargetForBreak = 10 + (int) (Math.random() * 11);
@@ -668,11 +674,12 @@ public class SellTaskManager {
         if (!(mc.currentScreen instanceof HandledScreen<?>)) {
             if (tickCounter == 0) {
                 smartPagesScanned = 0;
-                lowestMarketPrice = Integer.MAX_VALUE;
+                if (smartScanOwn) ownLowestPrice = Integer.MAX_VALUE;
+                else marketLowestPrice = Integer.MAX_VALUE;
                 if (mc.getNetworkHandler() != null) {
-                    mc.getNetworkHandler().sendCommand(heldSearchCommand());
+                    mc.getNetworkHandler().sendCommand(smartScanCommand());
                 }
-                if (config.chatNotifications) ChatUtils.sendAction("Mở /" + heldSearchCommand() + " để quét giá...");
+                if (config.chatNotifications) ChatUtils.sendAction("Mở /" + smartScanCommand() + " để quét giá...");
             }
             tickCounter++;
             if (tickCounter > config.guiTimeout) {
@@ -708,30 +715,13 @@ public class SellTaskManager {
             if (listingPrice == null) continue;
             pricedSlots++;
             sawMatchingListing = true;
-            if (isHeldWorkflow()
+            if (smartScanOwn) {
+                ownLowestPrice = Math.min(ownLowestPrice, listingPrice);
+            } else if (isHeldWorkflow()
                     || (listingPrice >= config.minimumMarketPrice
                     && listingPrice <= config.maximumMarketPrice)) {
-                lowestMarketPrice = Math.min(lowestMarketPrice, listingPrice);
+                marketLowestPrice = Math.min(marketLowestPrice, listingPrice);
             }
-        }
-
-        if (lowestMarketPrice != Integer.MAX_VALUE) {
-            price = lowestMarketPrice - config.undercutAmount;
-            if (price < 1) {
-                ChatUtils.sendError("Giá sau undercut không hợp lệ; dừng.");
-                state = SellState.ERROR;
-            } else {
-                if (config.chatNotifications) {
-                    ChatUtils.sendSuccess("Giá thấp nhất: §f" + lowestMarketPrice
-                            + " §7→ giá bán: §f" + price);
-                DiscordWebhook.send(config, "ASell tìm thấy giá thị trường=" + lowestMarketPrice
-                        + " | giá list=" + price);
-                }
-                mc.player.closeHandledScreen();
-                state = SellState.SENDING_COMMAND;
-                tickCounter = 0;
-            }
-            return;
         }
 
         if (smartPagesScanned < MAX_SMART_PAGES && clickNextPage(mc, containerSize)) {
@@ -740,17 +730,59 @@ public class SellTaskManager {
             return;
         }
 
+        // Phase complete
         mc.player.closeHandledScreen();
-        String scanDebug = "Scan slots=" + scannedSlots + " matched=" + matchedSlots + " priced=" + pricedSlots;
-        if (config.chatNotifications) {
-            ChatUtils.sendWarning(scanDebug + (sawMatchingListing
-                    ? " | có listing khớp nhưng không có giá dùng được; dừng."
-                    : " | không khớp item nào trên AH; dừng."));
-        }
-        System.out.println("[ASell] " + scanDebug);
-        DiscordWebhook.send(config, "ASell dừng: " + scanDebug);
-        state = SellState.FINISHED;
+        System.out.println("[ASell] " + (smartScanOwn ? "own" : "market")
+                + " scan slots=" + scannedSlots + " matched=" + matchedSlots + " priced=" + pricedSlots);
         tickCounter = 0;
+
+        if (smartScanOwn) {
+            smartScanOwn = false;
+            return; // next tick mở lệnh quét thị trường
+        }
+        smartScanOwn = true;
+
+        // Cả 2 pha xong → quyết định giá
+        boolean hasOwn = ownLowestPrice != Integer.MAX_VALUE;
+        boolean hasMarket = marketLowestPrice != Integer.MAX_VALUE;
+        if (!hasOwn && !hasMarket) {
+            ChatUtils.sendWarning("Không tìm thấy giá nào trên AH; dừng.");
+            DiscordWebhook.send(config, "ASell dừng: không có giá AH để tham chiếu.");
+            state = SellState.FINISHED;
+            return;
+        }
+        if (!hasMarket) marketLowestPrice = ownLowestPrice;
+
+        int target;
+        if (hasOwn && ownLowestPrice <= marketLowestPrice) {
+            target = ownLowestPrice;                    // hàng mình đang rẻ nhất/ngang bằng → giữ giá
+        } else {
+            target = marketLowestPrice - config.undercutAmount; // đối thủ rẻ hơn → undercut 1k
+        }
+        if (target < 1) {
+            ChatUtils.sendError("Giá sau tính toán không hợp lệ; dừng.");
+            state = SellState.ERROR;
+            return;
+        }
+        price = target;
+        String ownedStr = hasOwn ? String.valueOf(ownLowestPrice) : "không có";
+        if (config.chatNotifications) {
+            ChatUtils.sendSuccess("Giá của tôi: §f" + ownedStr + " §7| Giá thị trường: §f" + marketLowestPrice
+                    + " §7→ giá bán: §f" + price);
+        }
+        DiscordWebhook.send(config, "Giá của tôi=" + ownedStr + " | thị trường=" + marketLowestPrice
+                + " | giá list=" + price);
+        state = SellState.SENDING_COMMAND;
+        tickCounter = 0;
+    }
+
+    private String smartScanCommand() {
+        if (!smartScanOwn) return heldSearchCommand();
+        String base = heldSearchCommand();
+        String query = base.startsWith("ah ") ? base.substring(3) : base;
+        MinecraftClient mc = MinecraftClient.getInstance();
+        String name = (mc.player != null) ? mc.player.getName().getString() : "NotVaib";
+        return "ah " + name + " " + query;
     }
 
     private Integer parseMoneyFromText(String rawText) {

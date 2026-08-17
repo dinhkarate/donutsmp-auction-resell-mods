@@ -235,6 +235,15 @@ Mod chỉ chấp nhận HTTPS webhook của `discord.com` hoặc `discordapp.com
 
 Financial report gồm số item collected/listed/sold, gross listed value, realized revenue, cost mỗi item, projected profit và realized profit. Đặt cost bằng `/asell cost 300k`, kiểm tra bằng `/asell status`, hoặc gửi snapshot Discord bằng `/asell report`.
 
+### Chống drop giá (own-price check)
+
+Trước mỗi lần list, mod mở `/ah <tên bạn> <item>` để đọc giá rẻ nhất của hàng mình rồi mở `/ah <item>` đọc giá thị trường:
+
+- Nếu hàng mình đang bằng/rẻ hơn hoặc bằng giá rẻ nhất thị trường → **list đúng giá đó** (giữ vị trí, không giảm).
+- Nếu hàng mình cao hơn (hoặc chưa có listing) → **undercut 1k** so với giá thị trường.
+
+Cấu hình `useOwnPriceCheck` (mặc định `true`). Tên player lấy tự động từ game.
+
 ### Auto-Reconnect
 
 Khi bị disconnect (mất mạng, server restart, kick tạm thời), mod sẽ tự join lại server sau `reconnectDelaySeconds` giây, thử tối đa `maxReconnectAttempts` lần, và khi thành công sẽ tự chạy lại workflow bán cuối cùng nếu `autoResumeSell=true`. Sau mỗi lần thử và khi bỏ cuộc đều gửi thông báo vào webhook nếu đã bật.
